@@ -34,9 +34,9 @@ const ICON_MAP: Record<AutomationRule["icon"], LucideIcon> = {
 };
 
 const ICON_STYLE: Record<AutomationRule["iconColor"], string> = {
-  teal:  "bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400",
+  teal: "bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400",
   amber: "bg-amber-50 dark:bg-amber-900/30 text-amber-500 dark:text-amber-400",
-  red:   "bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400",
+  red: "bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400",
 };
 
 // ---------------------------------------------------------------------------

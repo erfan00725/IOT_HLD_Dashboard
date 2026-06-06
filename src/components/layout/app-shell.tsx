@@ -85,7 +85,7 @@ function NavItem({
       <NavIcon
         name={icon}
         className={[
-          "size-[18px] shrink-0 transition-colors duration-150",
+          "size-4.5 shrink-0 transition-colors duration-150",
           active
             ? "text-teal-600 dark:text-teal-400"
             : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300",
@@ -108,8 +108,12 @@ function SystemStatus() {
         <ShieldCheck className="size-4" strokeWidth={2} aria-hidden="true" />
       </div>
       <div className="leading-tight">
-        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">System Secure</p>
-        <p className="text-xs font-medium text-teal-600 dark:text-teal-400">All systems normal</p>
+        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+          System Secure
+        </p>
+        <p className="text-xs font-medium text-teal-600 dark:text-teal-400">
+          All systems normal
+        </p>
       </div>
     </div>
   );
@@ -125,7 +129,7 @@ function HelpLink() {
       className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 dark:text-slate-400 transition-colors duration-150 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100"
     >
       <HelpCircle
-        className="size-[18px] shrink-0 text-slate-400 dark:text-slate-500 transition-colors duration-150 group-hover:text-slate-600 dark:group-hover:text-slate-300"
+        className="size-4.5 shrink-0 text-slate-400 dark:text-slate-500 transition-colors duration-150 group-hover:text-slate-600 dark:group-hover:text-slate-300"
         strokeWidth={1.8}
         aria-hidden="true"
       />
@@ -193,13 +197,13 @@ function DarkModeToggle() {
     >
       {isDark ? (
         <Sun
-          className="size-[18px] shrink-0 text-amber-400"
+          className="size-4.5 shrink-0 text-amber-400"
           strokeWidth={1.8}
           aria-hidden="true"
         />
       ) : (
         <Moon
-          className="size-[18px] shrink-0 text-slate-500"
+          className="size-4.5 shrink-0 text-slate-500"
           strokeWidth={1.8}
           aria-hidden="true"
         />
@@ -277,7 +281,10 @@ function PageHeader() {
           <DarkModeToggle />
 
           {/* Vertical divider */}
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" aria-hidden="true" />
+          <div
+            className="h-6 w-px bg-slate-200 dark:bg-slate-700"
+            aria-hidden="true"
+          />
 
           <UserMenu />
         </div>
