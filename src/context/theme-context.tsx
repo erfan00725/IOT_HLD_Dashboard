@@ -13,55 +13,63 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 /**
- * ThemeProvider wraps the app and manages the dark/light theme state.
- * It applies the `dark` class to <html> so Tailwind's `dark:` variants work.
- * Persists preference in localStorage.
+ * Reads the initial theme synchronously from localStorage / system preference.
+ * Called once during component initialisation — safe because ThemeProvider
+ * is a Client Component and this only runs in the browser.
+ */
+function getInitialTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  const saved = localStorage.getItem("theme") as Theme | null;
+  if (saved === "dark" || saved === "light") return saved;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
+/**
+ * Applies or removes the `dark` class on <html> and persists to localStorage.
+ * Called immediately so there is no flash between state set and class change.
+ */
+function applyTheme(theme: Theme) {
+  const root = document.documentElement;
+  if (theme === "dark") {
+    root.classList.add("dark");
+  } else {
+    root.classList.remove("dark");
+  }
+  localStorage.setItem("theme", theme);
+}
+
+/**
+ * ThemeProvider manages dark/light state and keeps the <html> `dark` class
+ * in sync. Wrap the app root with this component.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
+  // Initialise from localStorage / system preference synchronously
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
-  // On mount: read saved preference or system preference
+  // Keep <html> class and localStorage in sync whenever theme changes
   useEffect(() => {
-    const saved = localStorage.getItem("theme") as Theme | null;
-    if (saved === "dark" || saved === "light") {
-      setTheme(saved);
-    } else {
-      // Fall back to system preference
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-      setTheme(prefersDark ? "dark" : "light");
-    }
-    setMounted(true);
-  }, []);
-
-  // Apply/remove `dark` class on <html> whenever theme changes
-  useEffect(() => {
-    if (!mounted) return;
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("theme", theme);
-  }, [theme, mounted]);
+    applyTheme(theme);
+  }, [theme]);
 
   function toggleTheme() {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      // Apply immediately (before next render) to avoid any visual lag
+      applyTheme(next);
+      return next;
+    });
   }
 
   return (
-    <ThemeContext.Provider
-      value={{ theme, toggleTheme, isDark: theme === "dark" }}
-    >
+    <ThemeContext.Provider value={{ theme, toggleTheme, isDark: theme === "dark" }}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
-/** Hook to consume the ThemeContext — throws if used outside ThemeProvider. */
+/** Hook to consume the ThemeContext — must be used inside a ThemeProvider. */
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) {
