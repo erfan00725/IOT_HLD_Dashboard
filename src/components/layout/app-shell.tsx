@@ -1,78 +1,207 @@
-import { Bell, ChevronRight, MoonStar, ShieldCheck } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Cpu,
+  Zap,
+  CalendarClock,
+  Bell,
+  BarChart2,
+  Settings,
+  ShieldCheck,
+  HelpCircle,
+  Home,
+  type LucideProps,
+} from 'lucide-react';
 import { sidebarItems } from '@/data/mock';
+import React from 'react';
 
+// ---------------------------------------------------------------------------
+// Icon registry — maps string names from mock data to Lucide components
+// ---------------------------------------------------------------------------
+const ICON_MAP: Record<string, React.FC<LucideProps>> = {
+  LayoutDashboard,
+  Cpu,
+  Zap,
+  CalendarClock,
+  Bell,
+  BarChart2,
+  Settings,
+};
+
+function NavIcon({ name, ...props }: { name: string } & LucideProps) {
+  const Icon = ICON_MAP[name] ?? LayoutDashboard;
+  return <Icon {...props} />;
+}
+
+// ---------------------------------------------------------------------------
+// Brand logo
+// ---------------------------------------------------------------------------
 function Logo() {
   return (
-    <div className="flex items-center gap-3">
-      <div className="grid size-10 place-items-center rounded-2xl bg-teal-600 text-white shadow-[0_12px_30px_rgba(15,118,110,0.24)]">
-        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path d="M5 11.5 12 5l7 6.5V19a1 1 0 0 1-1 1h-3.5v-5h-5v5H6a1 1 0 0 1-1-1z" />
-          <path d="M9 10.5h6" />
-        </svg>
+    <div className="flex items-center gap-3 px-3 py-1">
+      <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-teal-600 text-white shadow-[0_8px_24px_rgba(15,118,110,0.22)]">
+        <Home className="size-5" strokeWidth={1.8} aria-hidden="true" />
       </div>
-      <div>
-        <p className="text-xs font-medium uppercase tracking-[0.24em] text-slate-500">Smart Exit</p>
-        <h1 className="text-lg font-semibold tracking-tight text-slate-900">HomeLeave</h1>
+      <div className="leading-tight">
+        <p className="text-base font-semibold tracking-tight text-slate-900">LeaveDetect</p>
+        <p className="text-xs text-slate-400">Smart Home</p>
       </div>
     </div>
   );
 }
 
+// ---------------------------------------------------------------------------
+// Sidebar navigation item
+// ---------------------------------------------------------------------------
+function NavItem({ label, href, icon, active }: { label: string; href: string; icon: string; active?: boolean }) {
+  return (
+    <a
+      href={href}
+      className={[
+        'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150',
+        active
+          ? 'bg-teal-50 text-teal-700'
+          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800',
+      ].join(' ')}
+      aria-current={active ? 'page' : undefined}
+    >
+      <NavIcon
+        name={icon}
+        className={[
+          'size-[18px] shrink-0 transition-colors duration-150',
+          active ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600',
+        ].join(' ')}
+        strokeWidth={1.8}
+        aria-hidden="true"
+      />
+      {label}
+    </a>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Bottom status badge
+// ---------------------------------------------------------------------------
+function SystemStatus() {
+  return (
+    <div className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+      <div className="grid size-8 shrink-0 place-items-center rounded-full bg-teal-600 text-white shadow-sm">
+        <ShieldCheck className="size-4" strokeWidth={2} aria-hidden="true" />
+      </div>
+      <div className="leading-tight">
+        <p className="text-sm font-medium text-slate-800">System Secure</p>
+        <p className="text-xs font-medium text-teal-600">All systems normal</p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Help & Support link
+// ---------------------------------------------------------------------------
+function HelpLink() {
+  return (
+    <a
+      href="#help"
+      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-800"
+    >
+      <HelpCircle
+        className="size-[18px] shrink-0 text-slate-400 transition-colors duration-150 group-hover:text-slate-600"
+        strokeWidth={1.8}
+        aria-hidden="true"
+      />
+      Help &amp; Support
+    </a>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar
+// ---------------------------------------------------------------------------
+function Sidebar() {
+  return (
+    <aside
+      className="flex flex-col border-r border-slate-200/80 bg-white"
+      aria-label="Main navigation"
+    >
+      {/* Brand */}
+      <div className="px-4 pb-4 pt-6">
+        <Logo />
+      </div>
+
+      {/* Divider */}
+      <div className="mx-4 border-t border-slate-100" />
+
+      {/* Nav items */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <ul role="list" className="grid gap-0.5">
+          {sidebarItems.map((item) => (
+            <li key={item.label}>
+              <NavItem
+                label={item.label}
+                href={item.href}
+                icon={item.icon}
+                active={item.active}
+              />
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {/* Bottom section */}
+      <div className="border-t border-slate-100 px-3 pb-6 pt-4">
+        <SystemStatus />
+        <div className="mt-1">
+          <HelpLink />
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// App shell
+// ---------------------------------------------------------------------------
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(13,148,136,0.08),_transparent_28%),linear-gradient(180deg,#f8fafc_0%,#f5f7fb_100%)] text-slate-900">
-      <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      {/* Skip link for keyboard accessibility */}
+      <a
+        href="#content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:shadow-md"
+      >
         Skip to content
       </a>
-      <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="border-b border-slate-200/80 bg-white/80 px-5 py-6 backdrop-blur lg:border-b-0 lg:border-r lg:px-6 lg:py-8">
-          <div className="flex items-center justify-between lg:block">
-            <Logo />
-            <button className="inline-flex size-11 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-slate-300 hover:bg-white lg:mt-8" aria-label="Toggle theme">
-              <MoonStar className="size-5" />
-            </button>
+
+      <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[256px_minmax(0,1fr)]">
+        {/* Sidebar — hidden on mobile, visible from lg breakpoint */}
+        <div className="hidden lg:block">
+          <div className="sticky top-0 h-screen">
+            <Sidebar />
           </div>
-          <nav className="mt-8 grid gap-1">
-            {sidebarItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                className={item.active
-                  ? 'flex items-center justify-between rounded-2xl bg-teal-50 px-4 py-3 text-sm font-medium text-teal-700'
-                  : 'flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900'}
-              >
-                <span>{item.label}</span>
-                <ChevronRight className="size-4" />
-              </a>
-            ))}
-          </nav>
-          <div className="mt-8 rounded-[28px] border border-slate-200/80 bg-slate-950 p-5 text-white shadow-2xl shadow-slate-900/12">
-            <div className="flex items-center gap-3">
-              <div className="grid size-11 place-items-center rounded-2xl bg-white/10">
-                <ShieldCheck className="size-5" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Leave protection</p>
-                <p className="text-xs text-slate-400">2 reminders escalate automatically</p>
-              </div>
-            </div>
-            <p className="mt-4 text-sm leading-6 text-slate-300">Built for fast checks before leaving home, with clear device states and human-readable automations.</p>
-          </div>
-        </aside>
-        <div className="min-w-0">
-          <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/75 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
+        </div>
+
+        {/* Main content area */}
+        <div className="flex min-w-0 flex-col">
+          <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm font-medium text-teal-700">IoT leave-detection dashboard</p>
-                <p className="mt-1 text-sm text-slate-500">Node-RED + Wokwi simulators, Supabase-backed reminder rules</p>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  Node-RED + Wokwi simulators, Supabase-backed reminder rules
+                </p>
               </div>
               <div className="flex items-center gap-3">
-                <button className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
-                  <Bell className="size-4" />
+                <button
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  type="button"
+                >
+                  <Bell className="size-4" strokeWidth={1.8} aria-hidden="true" />
                   Test reminder
                 </button>
-                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                  <div className="grid size-10 place-items-center rounded-2xl bg-slate-100 text-sm font-semibold text-slate-700">E</div>
+                <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                  <div className="grid size-9 place-items-center rounded-xl bg-slate-100 text-sm font-semibold text-slate-700">
+                    E
+                  </div>
                   <div>
                     <p className="text-sm font-semibold text-slate-900">Erfan</p>
                     <p className="text-xs text-slate-500">Frontend developer</p>
@@ -81,7 +210,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           </header>
-          <main id="content" className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+
+          <main id="content" className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            {children}
+          </main>
         </div>
       </div>
     </div>
