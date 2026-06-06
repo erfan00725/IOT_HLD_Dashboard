@@ -1,8 +1,21 @@
 @import "tailwindcss";
 
+/*
+  Tailwind v4: configure dark mode to use the `.dark` class on <html>.
+  `@custom-variant` replaces the old `darkMode: 'class'` config option.
+*/
+@custom-variant dark (&:is(.dark *));
+
+/* ---- Light mode (default) ---- */
 :root {
   --background: #f4f7fb;
   --foreground: #0f172a;
+}
+
+/* ---- Dark mode ---- */
+.dark {
+  --background: #0f1117;
+  --foreground: #e2e8f0;
 }
 
 html {
@@ -13,6 +26,7 @@ body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 * {
@@ -29,5 +43,5 @@ button {
 }
 
 ::selection {
-  background: rgba(13, 148, 136, 0.18);
+  background: rgba(13, 148, 136, 0.25);
 }

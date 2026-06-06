@@ -24,12 +24,12 @@ const REMINDERS: Reminder[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Priority badge
+// Priority badge (with dark mode variants)
 // ---------------------------------------------------------------------------
 const PRIORITY_STYLES: Record<Priority, string> = {
-  High:   'bg-red-50   text-red-600   ring-red-200',
-  Medium: 'bg-amber-50 text-amber-600 ring-amber-200',
-  Low:    'bg-slate-100 text-slate-500 ring-slate-200',
+  High:   'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 ring-red-200 dark:ring-red-700',
+  Medium: 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 ring-amber-200 dark:ring-amber-700',
+  Low:    'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 ring-slate-200 dark:ring-slate-600',
 };
 
 function PriorityBadge({ priority }: { priority: Priority }) {
@@ -51,19 +51,19 @@ function ReminderRow({ icon: Icon, title, sub, time, priority }: Reminder) {
   return (
     <li className="flex items-center gap-3">
       {/* Icon bubble */}
-      <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-teal-50">
-        <Icon className="size-4 text-teal-600" strokeWidth={1.8} aria-hidden="true" />
+      <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-teal-50 dark:bg-teal-900/30">
+        <Icon className="size-4 text-teal-600 dark:text-teal-400" strokeWidth={1.8} aria-hidden="true" />
       </div>
 
       {/* Text */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-800">{title}</p>
-        <p className="truncate text-xs text-slate-400">{sub}</p>
+        <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</p>
+        <p className="truncate text-xs text-slate-400 dark:text-slate-500">{sub}</p>
       </div>
 
       {/* Time + badge */}
       <div className="flex shrink-0 flex-col items-end gap-1">
-        <span className="text-xs text-slate-400">{time}</span>
+        <span className="text-xs text-slate-400 dark:text-slate-500">{time}</span>
         <PriorityBadge priority={priority} />
       </div>
     </li>
@@ -76,18 +76,18 @@ function ReminderRow({ icon: Icon, title, sub, time, priority }: Reminder) {
 export function ActiveReminders() {
   return (
     <section
-      className="flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
+      className="flex flex-col rounded-2xl border border-slate-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-900 p-5 shadow-sm"
       aria-labelledby="reminders-heading"
     >
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Bell className="size-4 text-slate-500" strokeWidth={1.8} aria-hidden="true" />
-          <h2 id="reminders-heading" className="text-sm font-semibold text-slate-900">
+          <Bell className="size-4 text-slate-500 dark:text-slate-400" strokeWidth={1.8} aria-hidden="true" />
+          <h2 id="reminders-heading" className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             Active Reminders
           </h2>
         </div>
-        <a href="#reminders" className="text-xs font-medium text-teal-600 hover:underline">
+        <a href="#reminders" className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline">
           View all
         </a>
       </div>

@@ -12,11 +12,13 @@ import {
   HelpCircle,
   Home,
   Moon,
+  Sun,
   ChevronDown,
   type LucideProps,
 } from "lucide-react";
 import { sidebarItems } from "@/data/mock";
-import React, { useState } from "react";
+import React from "react";
+import { useTheme } from "@/context/theme-context";
 
 // ---------------------------------------------------------------------------
 // Icon registry — maps string names from mock data to Lucide components
@@ -46,10 +48,10 @@ function Logo() {
         <Home className="size-5" strokeWidth={1.8} aria-hidden="true" />
       </div>
       <div className="leading-tight">
-        <p className="text-base font-semibold tracking-tight text-slate-900">
+        <p className="text-base font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           LeaveDetect
         </p>
-        <p className="text-xs text-slate-400">Smart Home</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500">Smart Home</p>
       </div>
     </div>
   );
@@ -75,18 +77,18 @@ function NavItem({
       className={[
         "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150",
         active
-          ? "bg-teal-50 text-teal-700"
-          : "text-slate-500 hover:bg-slate-100 hover:text-slate-800",
+          ? "bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
+          : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100",
       ].join(" ")}
       aria-current={active ? "page" : undefined}
     >
       <NavIcon
         name={icon}
         className={[
-          "size-[18px] shrink-0 transition-colors duration-150",
+          "size-4.5 shrink-0 transition-colors duration-150",
           active
-            ? "text-teal-600"
-            : "text-slate-400 group-hover:text-slate-600",
+            ? "text-teal-600 dark:text-teal-400"
+            : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300",
         ].join(" ")}
         strokeWidth={1.8}
         aria-hidden="true"
@@ -106,8 +108,12 @@ function SystemStatus() {
         <ShieldCheck className="size-4" strokeWidth={2} aria-hidden="true" />
       </div>
       <div className="leading-tight">
-        <p className="text-sm font-medium text-slate-800">System Secure</p>
-        <p className="text-xs font-medium text-teal-600">All systems normal</p>
+        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+          System Secure
+        </p>
+        <p className="text-xs font-medium text-teal-600 dark:text-teal-400">
+          All systems normal
+        </p>
       </div>
     </div>
   );
@@ -120,10 +126,10 @@ function HelpLink() {
   return (
     <a
       href="#help"
-      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-800"
+      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 dark:text-slate-400 transition-colors duration-150 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100"
     >
       <HelpCircle
-        className="size-[18px] shrink-0 text-slate-400 transition-colors duration-150 group-hover:text-slate-600"
+        className="size-4.5 shrink-0 text-slate-400 dark:text-slate-500 transition-colors duration-150 group-hover:text-slate-600 dark:group-hover:text-slate-300"
         strokeWidth={1.8}
         aria-hidden="true"
       />
@@ -138,7 +144,7 @@ function HelpLink() {
 function Sidebar() {
   return (
     <aside
-      className="flex h-full flex-col border-r border-slate-200/80 bg-white"
+      className="flex h-full flex-col border-r border-slate-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-900"
       aria-label="Main navigation"
     >
       {/* Brand */}
@@ -147,7 +153,7 @@ function Sidebar() {
       </div>
 
       {/* Divider */}
-      <div className="mx-4 border-t border-slate-100" />
+      <div className="mx-4 border-t border-slate-100 dark:border-slate-700/60" />
 
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
@@ -166,7 +172,7 @@ function Sidebar() {
       </nav>
 
       {/* Bottom section */}
-      <div className="border-t border-slate-100 px-3 pb-6 pt-4">
+      <div className="border-t border-slate-100 dark:border-slate-700/60 px-3 pb-6 pt-4">
         <SystemStatus />
         <div className="mt-1">
           <HelpLink />
@@ -177,31 +183,41 @@ function Sidebar() {
 }
 
 // ---------------------------------------------------------------------------
-// Dark-mode toggle pill
+// Dark-mode toggle pill — connected to ThemeContext
 // ---------------------------------------------------------------------------
 function DarkModeToggle() {
-  const [dark, setDark] = useState(false);
+  const { isDark, toggleTheme } = useTheme();
 
   return (
     <button
       type="button"
-      onClick={() => setDark((d) => !d)}
-      className="flex items-center gap-2.5 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
-      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+      onClick={toggleTheme}
+      className="flex items-center gap-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 transition-colors hover:text-slate-900 dark:hover:text-slate-100"
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
-      <Moon
-        className="size-[18px] shrink-0 text-slate-500"
-        strokeWidth={1.8}
-        aria-hidden="true"
-      />
-      <span className="hidden sm:inline">Dark mode</span>
+      {isDark ? (
+        <Sun
+          className="size-4.5 shrink-0 text-amber-400"
+          strokeWidth={1.8}
+          aria-hidden="true"
+        />
+      ) : (
+        <Moon
+          className="size-4.5 shrink-0 text-slate-500"
+          strokeWidth={1.8}
+          aria-hidden="true"
+        />
+      )}
+      <span className="hidden sm:inline">
+        {isDark ? "Light mode" : "Dark mode"}
+      </span>
 
       {/* Pill toggle */}
       <span
         className={[
           "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border-2 transition-colors duration-200",
-          dark
-            ? "border-teal-600 bg-teal-600"
+          isDark
+            ? "border-teal-500 bg-teal-500"
             : "border-slate-300 bg-slate-200",
         ].join(" ")}
         aria-hidden="true"
@@ -209,7 +225,7 @@ function DarkModeToggle() {
         <span
           className={[
             "inline-block size-4 rounded-full bg-white shadow-sm transition-transform duration-200",
-            dark ? "translate-x-4" : "translate-x-0.5",
+            isDark ? "translate-x-4" : "translate-x-0.5",
           ].join(" ")}
         />
       </span>
@@ -224,18 +240,18 @@ function UserMenu() {
   return (
     <button
       type="button"
-      className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-slate-100"
+      className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
       aria-label="User menu"
     >
       {/* Avatar */}
-      <div className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-slate-200 text-sm font-semibold text-slate-600">
+      <div className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-300">
         E
       </div>
-      <span className="hidden text-sm font-medium text-slate-800 sm:inline">
+      <span className="hidden text-sm font-medium text-slate-800 dark:text-slate-200 sm:inline">
         Erfan
       </span>
       <ChevronDown
-        className="size-4 text-slate-400"
+        className="size-4 text-slate-400 dark:text-slate-500"
         strokeWidth={2}
         aria-hidden="true"
       />
@@ -248,14 +264,14 @@ function UserMenu() {
 // ---------------------------------------------------------------------------
 function PageHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 px-5 backdrop-blur-md sm:px-8">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 dark:border-slate-700/60 bg-white/90 dark:bg-slate-900/90 px-5 backdrop-blur-md sm:px-8">
       <div className="flex h-16 items-center justify-between gap-4">
         {/* Left: page title */}
         <div className="min-w-0">
-          <h1 className="truncate text-lg font-bold leading-tight text-slate-900">
+          <h1 className="truncate text-lg font-bold leading-tight text-slate-900 dark:text-slate-100">
             Dashboard
           </h1>
-          <p className="truncate text-sm text-slate-500">
+          <p className="truncate text-sm text-slate-500 dark:text-slate-400">
             Overview of your home and leave detection
           </p>
         </div>
@@ -265,7 +281,10 @@ function PageHeader() {
           <DarkModeToggle />
 
           {/* Vertical divider */}
-          <div className="h-6 w-px bg-slate-200" aria-hidden="true" />
+          <div
+            className="h-6 w-px bg-slate-200 dark:bg-slate-700"
+            aria-hidden="true"
+          />
 
           <UserMenu />
         </div>
@@ -279,11 +298,11 @@ function PageHeader() {
 // ---------------------------------------------------------------------------
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0f1117] text-slate-900 dark:text-slate-100">
       {/* Skip link for keyboard accessibility */}
       <a
         href="#content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:shadow-md"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white dark:focus:bg-slate-800 focus:px-4 focus:py-2 focus:shadow-md"
       >
         Skip to content
       </a>
