@@ -1,77 +1,66 @@
 'use client';
 
 import { Activity, CheckCircle2 } from 'lucide-react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  type TooltipProps,
+} from 'recharts';
 
 // ---------------------------------------------------------------------------
 // Data
 // ---------------------------------------------------------------------------
 const SEGMENTS = [
-  { label: 'Online',  count: 14, pct: 78, color: '#0d9488' /* teal-600  */ },
-  { label: 'Warning', count: 3,  pct: 17, color: '#f59e0b' /* amber-400 */ },
-  { label: 'Offline', count: 1,  pct: 5,  color: '#ef4444' /* red-500   */ },
+  { label: 'Online',  count: 14, pct: 78, color: '#0d9488' }, // teal-600
+  { label: 'Warning', count: 3,  pct: 17, color: '#f59e0b' }, // amber-400
+  { label: 'Offline', count: 1,  pct: 5,  color: '#ef4444' }, // red-500
 ] as const;
 
 const TOTAL = SEGMENTS.reduce((s, seg) => s + seg.count, 0);
 
-// ---------------------------------------------------------------------------
-// Donut chart (pure SVG, no external lib)
-// ---------------------------------------------------------------------------
-function DonutChart() {
-  const R  = 54;          // radius
-  const CX = 70;          // centre x
-  const CY = 70;          // centre y
-  const STROKE = 18;      // ring thickness
-  const CIRC = 2 * Math.PI * R;
+// Recharts expects plain objects with a `value` key for Pie
+const PIE_DATA = SEGMENTS.map((s) => ({ name: s.label, value: s.count, pct: s.pct, color: s.color }));
 
-  // Build segments from 12-o'clock (offset -90deg)
-  let offset = 0;
-  const slices = SEGMENTS.map((seg) => {
-    const dash  = (seg.pct / 100) * CIRC;
-    const gap   = CIRC - dash;
-    const rotate = (offset / 100) * 360 - 90;
-    offset += seg.pct;
-    return { ...seg, dash, gap, rotate };
-  });
-
+// ---------------------------------------------------------------------------
+// Custom tooltip
+// ---------------------------------------------------------------------------
+function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
+  if (!active || !payload?.length) return null;
+  const { name, value, pct } = payload[0].payload as { name: string; value: number; pct: number };
   return (
-    <svg
-      width="140"
-      height="140"
-      viewBox="0 0 140 140"
-      aria-label={`Device health donut chart: ${TOTAL} total devices`}
-      role="img"
-    >
-      {/* Background ring */}
-      <circle cx={CX} cy={CY} r={R} fill="none" stroke="#f1f5f9" strokeWidth={STROKE} />
+    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-md text-xs">
+      <p className="font-semibold text-slate-800">{name}</p>
+      <p className="text-slate-500">{value} devices ({pct}%)</p>
+    </div>
+  );
+}
 
-      {/* Coloured segments */}
-      {slices.map((s) => (
-        <circle
-          key={s.label}
-          cx={CX}
-          cy={CY}
-          r={R}
-          fill="none"
-          stroke={s.color}
-          strokeWidth={STROKE}
-          strokeDasharray={`${s.dash} ${s.gap}`}
-          strokeLinecap="round"
-          transform={`rotate(${s.rotate} ${CX} ${CY})`}
-          style={{ transition: 'stroke-dasharray 0.5s ease' }}
-        />
-      ))}
-
-      {/* Centre label */}
-      <text x={CX} y={CY - 6} textAnchor="middle" className="fill-slate-900" fontSize="22" fontWeight="700" fontFamily="inherit">
+// ---------------------------------------------------------------------------
+// Centre label rendered inside the donut hole via a custom SVG label
+// ---------------------------------------------------------------------------
+function CentreLabel({
+  cx,
+  cy,
+}: {
+  cx?: number;
+  cy?: number;
+}) {
+  if (cx == null || cy == null) return null;
+  return (
+    <g>
+      <text x={cx} y={cy - 8} textAnchor="middle" fill="#0f172a" fontSize={22} fontWeight={700}>
         {TOTAL}
       </text>
-      <text x={CX} y={CY + 10} textAnchor="middle" className="fill-slate-400" fontSize="10" fontFamily="inherit">
+      <text x={cx} y={cy + 10} textAnchor="middle" fill="#94a3b8" fontSize={10}>
         Total
       </text>
-      <text x={CX} y={CY + 22} textAnchor="middle" className="fill-slate-400" fontSize="10" fontFamily="inherit">
+      <text x={cx} y={cy + 23} textAnchor="middle" fill="#94a3b8" fontSize={10}>
         Devices
       </text>
-    </svg>
+    </g>
   );
 }
 
@@ -96,7 +85,7 @@ function LegendRow({
         style={{ backgroundColor: color }}
         aria-hidden="true"
       />
-      <span className="w-16 text-sm font-semibold text-slate-700">{count}</span>
+      <span className="w-6 text-sm font-semibold text-slate-700">{count}</span>
       <span className="flex-1 text-sm text-slate-500">{label}</span>
       <span className="text-sm font-medium text-slate-400">{pct}%</span>
     </div>
@@ -126,9 +115,42 @@ export function DeviceHealth() {
       </div>
 
       {/* Chart + legend */}
-      <div className="flex flex-1 items-center justify-center gap-6">
-        <DonutChart />
+      <div className="flex flex-1 items-center justify-center gap-4">
+        {/* Recharts donut */}
+        <div className="size-[140px] shrink-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={PIE_DATA}
+                cx="50%"
+                cy="50%"
+                innerRadius={42}
+                outerRadius={62}
+                paddingAngle={3}
+                startAngle={90}
+                endAngle={-270}
+                dataKey="value"
+                labelLine={false}
+                label={<CentreLabel />}
+                isAnimationActive
+                animationBegin={0}
+                animationDuration={700}
+                animationEasing="ease-out"
+              >
+                {PIE_DATA.map((entry) => (
+                  <Cell
+                    key={entry.name}
+                    fill={entry.color}
+                    stroke="transparent"
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
 
+        {/* Legend */}
         <div className="grid gap-3">
           {SEGMENTS.map((seg) => (
             <LegendRow key={seg.label} {...seg} />
