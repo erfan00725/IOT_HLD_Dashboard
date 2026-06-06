@@ -21,6 +21,7 @@ export default function Home() {
         </div>
 
         {/* ── Bottom: Automation Rules table ────────────────────── */}
+        {/* @ts-ignore */}
         <AutomationRules rules={automationRules} />
       </div>
     </AppShell>

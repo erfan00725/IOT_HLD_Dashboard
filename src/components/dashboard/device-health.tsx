@@ -162,7 +162,7 @@ export function DeviceHealth() {
       {/* Chart + legend */}
       <div className="flex flex-1 items-center justify-center gap-4">
         {/* Recharts donut */}
-        <div className="size-[140px] shrink-0">
+        <div className="size-35 shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

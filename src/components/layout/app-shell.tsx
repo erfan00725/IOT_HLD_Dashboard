@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   LayoutDashboard,
@@ -14,9 +14,9 @@ import {
   Moon,
   ChevronDown,
   type LucideProps,
-} from 'lucide-react';
-import { sidebarItems } from '@/data/mock';
-import React, { useState } from 'react';
+} from "lucide-react";
+import { sidebarItems } from "@/data/mock";
+import React, { useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Icon registry — maps string names from mock data to Lucide components
@@ -46,7 +46,9 @@ function Logo() {
         <Home className="size-5" strokeWidth={1.8} aria-hidden="true" />
       </div>
       <div className="leading-tight">
-        <p className="text-base font-semibold tracking-tight text-slate-900">LeaveDetect</p>
+        <p className="text-base font-semibold tracking-tight text-slate-900">
+          LeaveDetect
+        </p>
         <p className="text-xs text-slate-400">Smart Home</p>
       </div>
     </div>
@@ -71,19 +73,21 @@ function NavItem({
     <a
       href={href}
       className={[
-        'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150',
+        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150",
         active
-          ? 'bg-teal-50 text-teal-700'
-          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800',
-      ].join(' ')}
-      aria-current={active ? 'page' : undefined}
+          ? "bg-teal-50 text-teal-700"
+          : "text-slate-500 hover:bg-slate-100 hover:text-slate-800",
+      ].join(" ")}
+      aria-current={active ? "page" : undefined}
     >
       <NavIcon
         name={icon}
         className={[
-          'size-[18px] shrink-0 transition-colors duration-150',
-          active ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600',
-        ].join(' ')}
+          "size-[18px] shrink-0 transition-colors duration-150",
+          active
+            ? "text-teal-600"
+            : "text-slate-400 group-hover:text-slate-600",
+        ].join(" ")}
         strokeWidth={1.8}
         aria-hidden="true"
       />
@@ -183,26 +187,30 @@ function DarkModeToggle() {
       type="button"
       onClick={() => setDark((d) => !d)}
       className="flex items-center gap-2.5 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
-      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
     >
-      <Moon className="size-[18px] shrink-0 text-slate-500" strokeWidth={1.8} aria-hidden="true" />
+      <Moon
+        className="size-[18px] shrink-0 text-slate-500"
+        strokeWidth={1.8}
+        aria-hidden="true"
+      />
       <span className="hidden sm:inline">Dark mode</span>
 
       {/* Pill toggle */}
       <span
         className={[
-          'relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border-2 transition-colors duration-200',
+          "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border-2 transition-colors duration-200",
           dark
-            ? 'border-teal-600 bg-teal-600'
-            : 'border-slate-300 bg-slate-200',
-        ].join(' ')}
+            ? "border-teal-600 bg-teal-600"
+            : "border-slate-300 bg-slate-200",
+        ].join(" ")}
         aria-hidden="true"
       >
         <span
           className={[
-            'inline-block size-4 rounded-full bg-white shadow-sm transition-transform duration-200',
-            dark ? 'translate-x-4' : 'translate-x-0.5',
-          ].join(' ')}
+            "inline-block size-4 rounded-full bg-white shadow-sm transition-transform duration-200",
+            dark ? "translate-x-4" : "translate-x-0.5",
+          ].join(" ")}
         />
       </span>
     </button>
@@ -223,7 +231,9 @@ function UserMenu() {
       <div className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-slate-200 text-sm font-semibold text-slate-600">
         E
       </div>
-      <span className="hidden text-sm font-medium text-slate-800 sm:inline">Erfan</span>
+      <span className="hidden text-sm font-medium text-slate-800 sm:inline">
+        Erfan
+      </span>
       <ChevronDown
         className="size-4 text-slate-400"
         strokeWidth={2}
@@ -242,8 +252,12 @@ function PageHeader() {
       <div className="flex h-16 items-center justify-between gap-4">
         {/* Left: page title */}
         <div className="min-w-0">
-          <h1 className="truncate text-lg font-bold leading-tight text-slate-900">Dashboard</h1>
-          <p className="truncate text-sm text-slate-500">Overview of your home and leave detection</p>
+          <h1 className="truncate text-lg font-bold leading-tight text-slate-900">
+            Dashboard
+          </h1>
+          <p className="truncate text-sm text-slate-500">
+            Overview of your home and leave detection
+          </p>
         </div>
 
         {/* Right: dark mode toggle + user menu */}
@@ -274,7 +288,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
 
-      <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[256px_minmax(0,1fr)]">
+      <div className="mx-auto grid min-h-screen max-w-400 lg:grid-cols-[256px_minmax(0,1fr)]">
         {/* Sidebar — hidden on mobile, visible from lg breakpoint */}
         <div className="hidden lg:block">
           <div className="sticky top-0 h-screen">
@@ -285,7 +299,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Main content area */}
         <div className="flex min-w-0 flex-col">
           <PageHeader />
-          <main id="content" className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <main
+            id="content"
+            className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+          >
             {children}
           </main>
         </div>
