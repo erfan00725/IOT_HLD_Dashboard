@@ -1,3 +1,5 @@
+'use client';
+
 import {
   LayoutDashboard,
   Cpu,
@@ -9,10 +11,12 @@ import {
   ShieldCheck,
   HelpCircle,
   Home,
+  Moon,
+  ChevronDown,
   type LucideProps,
 } from 'lucide-react';
 import { sidebarItems } from '@/data/mock';
-import React from 'react';
+import React, { useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Icon registry — maps string names from mock data to Lucide components
@@ -52,7 +56,17 @@ function Logo() {
 // ---------------------------------------------------------------------------
 // Sidebar navigation item
 // ---------------------------------------------------------------------------
-function NavItem({ label, href, icon, active }: { label: string; href: string; icon: string; active?: boolean }) {
+function NavItem({
+  label,
+  href,
+  icon,
+  active,
+}: {
+  label: string;
+  href: string;
+  icon: string;
+  active?: boolean;
+}) {
   return (
     <a
       href={href}
@@ -120,7 +134,7 @@ function HelpLink() {
 function Sidebar() {
   return (
     <aside
-      className="flex flex-col border-r border-slate-200/80 bg-white"
+      className="flex h-full flex-col border-r border-slate-200/80 bg-white"
       aria-label="Main navigation"
     >
       {/* Brand */}
@@ -159,6 +173,94 @@ function Sidebar() {
 }
 
 // ---------------------------------------------------------------------------
+// Dark-mode toggle pill
+// ---------------------------------------------------------------------------
+function DarkModeToggle() {
+  const [dark, setDark] = useState(false);
+
+  return (
+    <button
+      type="button"
+      onClick={() => setDark((d) => !d)}
+      className="flex items-center gap-2.5 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+    >
+      <Moon className="size-[18px] shrink-0 text-slate-500" strokeWidth={1.8} aria-hidden="true" />
+      <span className="hidden sm:inline">Dark mode</span>
+
+      {/* Pill toggle */}
+      <span
+        className={[
+          'relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border-2 transition-colors duration-200',
+          dark
+            ? 'border-teal-600 bg-teal-600'
+            : 'border-slate-300 bg-slate-200',
+        ].join(' ')}
+        aria-hidden="true"
+      >
+        <span
+          className={[
+            'inline-block size-4 rounded-full bg-white shadow-sm transition-transform duration-200',
+            dark ? 'translate-x-4' : 'translate-x-0.5',
+          ].join(' ')}
+        />
+      </span>
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// User menu button
+// ---------------------------------------------------------------------------
+function UserMenu() {
+  return (
+    <button
+      type="button"
+      className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-slate-100"
+      aria-label="User menu"
+    >
+      {/* Avatar */}
+      <div className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-slate-200 text-sm font-semibold text-slate-600">
+        E
+      </div>
+      <span className="hidden text-sm font-medium text-slate-800 sm:inline">Erfan</span>
+      <ChevronDown
+        className="size-4 text-slate-400"
+        strokeWidth={2}
+        aria-hidden="true"
+      />
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Page header — title + subtitle on the left, controls on the right
+// ---------------------------------------------------------------------------
+function PageHeader() {
+  return (
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 px-5 backdrop-blur-md sm:px-8">
+      <div className="flex h-16 items-center justify-between gap-4">
+        {/* Left: page title */}
+        <div className="min-w-0">
+          <h1 className="truncate text-lg font-bold leading-tight text-slate-900">Dashboard</h1>
+          <p className="truncate text-sm text-slate-500">Overview of your home and leave detection</p>
+        </div>
+
+        {/* Right: dark mode toggle + user menu */}
+        <div className="flex shrink-0 items-center gap-5">
+          <DarkModeToggle />
+
+          {/* Vertical divider */}
+          <div className="h-6 w-px bg-slate-200" aria-hidden="true" />
+
+          <UserMenu />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // App shell
 // ---------------------------------------------------------------------------
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -182,35 +284,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Main content area */}
         <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm font-medium text-teal-700">IoT leave-detection dashboard</p>
-                <p className="mt-0.5 text-sm text-slate-500">
-                  Node-RED + Wokwi simulators, Supabase-backed reminder rules
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                  type="button"
-                >
-                  <Bell className="size-4" strokeWidth={1.8} aria-hidden="true" />
-                  Test reminder
-                </button>
-                <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                  <div className="grid size-9 place-items-center rounded-xl bg-slate-100 text-sm font-semibold text-slate-700">
-                    E
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">Erfan</p>
-                    <p className="text-xs text-slate-500">Frontend developer</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </header>
-
+          <PageHeader />
           <main id="content" className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             {children}
           </main>
