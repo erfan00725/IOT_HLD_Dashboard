@@ -1,7 +1,5 @@
 import {
-  AlertTriangle,
   ArrowUpRight,
-  CheckCircle2,
   Cpu,
   Plus,
   Sparkles,
@@ -10,6 +8,9 @@ import { AppShell } from "@/components/layout/app-shell";
 import { SectionCard } from "@/components/dashboard/section-card";
 import { StatusCard } from "@/components/dashboard/status-card";
 import { HomeStatusSection } from "@/components/dashboard/home-status-section";
+import { ActiveReminders } from "@/components/dashboard/active-reminders";
+import { DeviceHealth } from "@/components/dashboard/device-health";
+import { RecentLeaveEvents } from "@/components/dashboard/recent-leave-events";
 import {
   automationRules,
   devices,
@@ -22,10 +23,17 @@ export default function Home() {
   return (
     <AppShell>
       <div className="grid gap-6">
-        {/* ── Home Status hero row ─────────────────────────────────── */}
+        {/* ── Home Status hero row ──────────────────────────────── */}
         <HomeStatusSection />
 
-        {/* ── Main content grid ────────────────────────────────────── */}
+        {/* ── Middle row: Reminders | Device Health | Leave Events  */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <ActiveReminders />
+          <DeviceHealth />
+          <RecentLeaveEvents />
+        </div>
+
+        {/* ── Bottom grid ──────────────────────────────────────── */}
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_420px]">
           <div className="grid gap-6">
             <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
