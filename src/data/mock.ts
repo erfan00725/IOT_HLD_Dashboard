@@ -37,7 +37,34 @@ export const history = [
 ];
 
 export const automationRules = [
-  { name: 'Leave confidence', description: 'Trigger when Wi\u2011Fi disconnects + door closes within 90 seconds.', enabled: true },
-  { name: 'Night stove check', description: 'Escalate reminder after 10:00 PM if stove sensor is unresolved.', enabled: true },
-  { name: 'Campus checklist', description: 'On weekdays, add wallet and student ID to the outgoing checklist.', enabled: false },
+  {
+    id: 1,
+    name: 'Away Mode',
+    icon: 'home',
+    iconColor: 'teal',
+    trigger: 'You leave home',
+    condition: 'No one at home',
+    action: 'Lock doors, turn off stove, arm security',
+    enabled: true,
+  },
+  {
+    id: 2,
+    name: 'Lights Auto-Off',
+    icon: 'lightbulb',
+    iconColor: 'amber',
+    trigger: 'No motion detected',
+    condition: 'After 10 minutes',
+    action: 'Turn off all lights',
+    enabled: true,
+  },
+  {
+    id: 3,
+    name: 'Security Alert',
+    icon: 'shield',
+    iconColor: 'red',
+    trigger: 'Door opened',
+    condition: 'When away',
+    action: 'Send notification, record clip',
+    enabled: true,
+  },
 ];
