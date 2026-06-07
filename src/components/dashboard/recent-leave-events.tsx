@@ -4,16 +4,21 @@ import {
   Lightbulb,
   KeyRound,
   LockKeyhole,
+  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
 import { IconBubble } from "@/components/ui/icon-bubble";
 import { ICON_BUBBLE_STYLES } from "@/lib/utils/tone-styles";
+import {
+  getRecentStateEventsForDashboard,
+  getFirstHome,
+} from "@/lib/supabase/queries/dashboard";
+import { formatTime } from "@/lib/utils/dashboard-mappers";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface LeaveEvent {
   icon: LucideIcon;
   time: string;
@@ -21,26 +26,28 @@ interface LeaveEvent {
   sub: string;
 }
 
-// ---------------------------------------------------------------------------
-// Data
-// ---------------------------------------------------------------------------
-const EVENTS: LeaveEvent[] = [
-  { icon: PersonStanding, time: "8:42 AM", title: "You left home",         sub: "Motion not detected"   },
-  { icon: Lightbulb,      time: "8:42 AM", title: "Living room lights on",  sub: "Lights were on"        },
-  { icon: KeyRound,       time: "8:41 AM", title: "Keys not detected",      sub: "Key tracker not found" },
-  { icon: LockKeyhole,    time: "8:41 AM", title: "Front door locked",      sub: "Door locked after exit" },
-];
+// ─── Category → icon ─────────────────────────────────────────────────────────
 
-// ---------------------------------------------------------------------------
-// Single event row
-// ---------------------------------------------------------------------------
+function categoryToIcon(category: string): LucideIcon {
+  switch (category) {
+    case "presence": return PersonStanding;
+    case "lighting": return Lightbulb;
+    case "access":   return KeyRound;
+    case "opening":  return LockKeyhole;
+    case "safety":   return ShieldAlert;
+    default:         return Clock;
+  }
+}
+
+// ─── Single event row ─────────────────────────────────────────────────────────
+
 function EventRow({ icon, time, title, sub }: LeaveEvent) {
   return (
     <li className="flex items-start gap-3">
       <IconBubble icon={icon} colorClass={ICON_BUBBLE_STYLES.slate} size="sm" />
-
-      <span className="mt-0.5 shrink-0 text-xs text-slate-400 dark:text-slate-500">{time}</span>
-
+      <span className="mt-0.5 shrink-0 text-xs text-slate-400 dark:text-slate-500">
+        {time}
+      </span>
       <div className="min-w-0">
         <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</p>
         <p className="text-xs text-slate-400 dark:text-slate-500">{sub}</p>
@@ -49,10 +56,32 @@ function EventRow({ icon, time, title, sub }: LeaveEvent) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Recent Leave Events panel
-// ---------------------------------------------------------------------------
-export function RecentLeaveEvents() {
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+function NoEvents() {
+  return (
+    <li className="py-4 text-center text-sm text-slate-400 dark:text-slate-500">
+      No recent events recorded yet.
+    </li>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export async function RecentLeaveEvents() {
+  const home = await getFirstHome();
+
+  const rawEvents = home
+    ? await getRecentStateEventsForDashboard(home.id)
+    : [];
+
+  const events: LeaveEvent[] = rawEvents.map((ev) => ({
+    icon:  categoryToIcon(ev.devices.category),
+    time:  formatTime(ev.observed_at),
+    title: ev.devices.name,
+    sub:   `State: ${ev.state_value}`,
+  }));
+
   return (
     <CardPanel aria-labelledby="leave-events-heading">
       <PanelHeader
@@ -62,9 +91,9 @@ export function RecentLeaveEvents() {
         viewAllHref="#history"
       />
       <ul className="grid gap-4">
-        {EVENTS.map((ev) => (
-          <EventRow key={ev.title} {...ev} />
-        ))}
+        {events.length > 0
+          ? events.map((ev, i) => <EventRow key={i} {...ev} />)
+          : <NoEvents />}
       </ul>
     </CardPanel>
   );

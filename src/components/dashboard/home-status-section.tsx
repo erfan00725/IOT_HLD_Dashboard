@@ -15,6 +15,14 @@ import {
   STATUS_TILE_ICON_STYLES,
 } from "@/lib/utils/tone-styles";
 import { CardPanel, PanelHeader } from "../ui";
+import {
+  getDashboardDeviceStates,
+  getActiveLeaveSessionForDashboard,
+  getFirstHome,
+} from "@/lib/supabase/queries/dashboard";
+import { formatTime } from "@/lib/utils/dashboard-mappers";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface StatusTile {
   icon: LucideIcon;
@@ -23,18 +31,14 @@ interface StatusTile {
   tone: ToneColor;
 }
 
-const STATUS_TILES: StatusTile[] = [
-  { icon: PersonStanding, label: "Away", sub: "Since 8:42 AM", tone: "teal" },
-  { icon: Lightbulb, label: "Lights On", sub: "2 Rooms", tone: "amber" },
-  { icon: Grid2x2, label: "Stove Off", sub: "All Clear", tone: "teal" },
-  { icon: KeyRound, label: "Keys Missing", sub: "Not Detected", tone: "red" },
-  { icon: LockKeyhole, label: "Door Locked", sub: "Front Door", tone: "teal" },
-];
+// ─── Sub-components (unchanged from original) ────────────────────────────────
 
 function StatusTile({ icon: Icon, label, sub, tone }: StatusTile) {
   return (
     <div
-      className={`flex flex-col items-start gap-3 rounded-2xl ${ICON_BUBBLE_STYLES[tone]} p-4 transition-shadow hover:shadow-sm`}
+      className={`flex flex-col items-start gap-3 rounded-2xl ${
+        ICON_BUBBLE_STYLES[tone]
+      } p-4 transition-shadow hover:shadow-sm`}
     >
       <Icon
         className={`size-7 ${STATUS_TILE_ICON_STYLES[tone]}`}
@@ -70,18 +74,104 @@ const HeaderActions = () => (
   </div>
 );
 
-export function HomeStatusSection() {
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export async function HomeStatusSection() {
+  // ── Fetch data ──────────────────────────────────────────────────────────
+  const home = await getFirstHome();
+
+  // When no home exists yet, render with sensible placeholder tiles
+  const tiles: StatusTile[] = await (async () => {
+    if (!home) {
+      return [
+        { icon: PersonStanding, label: "Home",       sub: "No home configured", tone: "slate" as ToneColor },
+        { icon: Lightbulb,      label: "Lights",     sub: "No data",            tone: "slate" as ToneColor },
+        { icon: Grid2x2,        label: "Stove",      sub: "No data",            tone: "slate" as ToneColor },
+        { icon: KeyRound,       label: "Keys",       sub: "No data",            tone: "slate" as ToneColor },
+        { icon: LockKeyhole,    label: "Door",       sub: "No data",            tone: "slate" as ToneColor },
+      ];
+    }
+
+    const [deviceStates, activeSession] = await Promise.all([
+      getDashboardDeviceStates(home.id),
+      getActiveLeaveSessionForDashboard(home.id),
+    ]);
+
+    // ── Presence tile ──────────────────────────────────────────────────────
+    const presenceTile: StatusTile = activeSession
+      ? {
+          icon: PersonStanding,
+          label: "Away",
+          sub: `Since ${formatTime(activeSession.started_at)}`,
+          tone: "teal",
+        }
+      : { icon: PersonStanding, label: "Home", sub: "You are home", tone: "slate" };
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+    const findByCategory = (cat: string) =>
+      deviceStates.find((d) => d.devices.category === cat);
+
+    const stateOf = (cat: string) =>
+      findByCategory(cat)?.state_value ?? null;
+
+    // ── Lighting tile ──────────────────────────────────────────────────────
+    const lightingStates = deviceStates.filter(
+      (d) => d.devices.category === "lighting"
+    );
+    const lightsOnCount = lightingStates.filter(
+      (d) => d.state_value.toLowerCase() !== "off"
+    ).length;
+    const lightingTile: StatusTile =
+      lightsOnCount > 0
+        ? {
+            icon: Lightbulb,
+            label: "Lights On",
+            sub: `${lightsOnCount} device${lightsOnCount > 1 ? "s" : ""}`,
+            tone: "amber",
+          }
+        : { icon: Lightbulb, label: "Lights Off", sub: "All clear", tone: "teal" };
+
+    // ── Safety (stove) tile ────────────────────────────────────────────────
+    const safetyState = stateOf("safety");
+    const stoveTile: StatusTile =
+      safetyState === null
+        ? { icon: Grid2x2, label: "Stove",   sub: "No sensor",  tone: "slate" }
+        : safetyState.toLowerCase() === "safe"
+        ? { icon: Grid2x2, label: "Stove Off", sub: "All Clear", tone: "teal" }
+        : { icon: Grid2x2, label: "Stove On",  sub: "Check stove", tone: "red" };
+
+    // ── Presence / key tile ────────────────────────────────────────────────
+    const accessState = stateOf("access");
+    const keyTile: StatusTile =
+      accessState === null
+        ? { icon: KeyRound, label: "Keys",         sub: "No tracker",    tone: "slate" }
+        : accessState.toLowerCase() === "detected"
+        ? { icon: KeyRound, label: "Keys Detected", sub: "Found nearby",  tone: "teal" }
+        : { icon: KeyRound, label: "Keys Missing",  sub: "Not detected",  tone: "red" };
+
+    // ── Door tile ──────────────────────────────────────────────────────────
+    const doorState = stateOf("opening");
+    const doorTile: StatusTile =
+      doorState === null
+        ? { icon: LockKeyhole, label: "Door",        sub: "No sensor",  tone: "slate" }
+        : doorState.toLowerCase() === "locked"
+        ? { icon: LockKeyhole, label: "Door Locked",   sub: "Front Door", tone: "teal" }
+        : { icon: LockKeyhole, label: "Door Unlocked",  sub: "Front Door", tone: "red" };
+
+    return [presenceTile, lightingTile, stoveTile, keyTile, doorTile];
+  })();
+
   return (
     <CardPanel className="p-5 sm:p-6" aria-labelledby="home-status-heading">
       <PanelHeader
         icon={Home}
-        title="Home Status"
+        title={home ? home.name : "Home Status"}
         headingId="home-status-heading"
         short_description="Live snapshot"
         actions={<HeaderActions />}
       />
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-        {STATUS_TILES.map((tile) => (
+        {tiles.map((tile) => (
           <StatusTile key={tile.label} {...tile} />
         ))}
       </div>
