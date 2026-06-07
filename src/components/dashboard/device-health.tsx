@@ -49,7 +49,15 @@ function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
 
 // ─── Donut centre label ────────────────────────────────────────────────────────
 
-function CentreLabel({ cx, cy, total }: { cx?: number; cy?: number; total: number }) {
+function CentreLabel({
+  cx,
+  cy,
+  total,
+}: {
+  cx?: number;
+  cy?: number;
+  total: number;
+}) {
   if (cx == null || cy == null) return null;
   return (
     <g>
@@ -74,7 +82,8 @@ function CentreLabel({ cx, cy, total }: { cx?: number; cy?: number; total: numbe
 }
 
 function renderSlice(props: any) {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, payload } = props;
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, payload } =
+    props;
   return (
     <g>
       <Sector
@@ -91,9 +100,7 @@ function renderSlice(props: any) {
   );
 }
 
-function LegendRow({
-  label, count, pct, color,
-}: DeviceHealthSegment) {
+function LegendRow({ label, count, pct, color }: DeviceHealthSegment) {
   return (
     <div className="flex items-center gap-2">
       <span
@@ -104,19 +111,27 @@ function LegendRow({
       <span className="w-6 text-sm font-semibold text-slate-700 dark:text-slate-200">
         {count}
       </span>
-      <span className="flex-1 text-sm text-slate-500 dark:text-slate-400">{label}</span>
-      <span className="text-sm font-medium text-slate-400 dark:text-slate-500">{pct}%</span>
+      <span className="flex-1 text-sm text-slate-500 dark:text-slate-400">
+        {label}
+      </span>
+      <span className="text-sm font-medium text-slate-400 dark:text-slate-500">
+        {pct}%
+      </span>
     </div>
   );
 }
 
 // ─── Client component (receives pre-computed props from server wrapper) ────────
 
-export function DeviceHealthChart({ segments, total, hasWarning }: DeviceHealthProps) {
+export function DeviceHealthChart({
+  segments,
+  total,
+  hasWarning,
+}: DeviceHealthProps) {
   const pieData = segments.map((s) => ({
-    name:  s.label,
+    name: s.label,
     value: s.count,
-    pct:   s.pct,
+    pct: s.pct,
     color: s.color,
   }));
 
@@ -166,12 +181,20 @@ export function DeviceHealthChart({ segments, total, hasWarning }: DeviceHealthP
       <div className="mt-4 flex items-center gap-2 border-t border-slate-100 dark:border-slate-700/60 pt-4 text-xs text-slate-500 dark:text-slate-400">
         {hasWarning ? (
           <>
-            <AlertCircle className="size-4 shrink-0 text-amber-500" strokeWidth={2} aria-hidden="true" />
+            <AlertCircle
+              className="size-4 shrink-0 text-amber-500"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
             Some devices need attention.
           </>
         ) : (
           <>
-            <CheckCircle2 className="size-4 shrink-0 text-teal-500" strokeWidth={2} aria-hidden="true" />
+            <CheckCircle2
+              className="size-4 shrink-0 text-teal-500"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
             All devices are operating normally.
           </>
         )}

@@ -17,7 +17,7 @@ import {
   type LucideProps,
 } from "lucide-react";
 import { sidebarItems } from "@/data/mock";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useTheme } from "@/context/theme-context";
 
 // ---------------------------------------------------------------------------
@@ -187,6 +187,14 @@ function Sidebar() {
 // ---------------------------------------------------------------------------
 function DarkModeToggle() {
   const { isDark, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Avoid hydration mismatch by rendering nothing on the server
+  if (!mounted) return null;
 
   return (
     <button
