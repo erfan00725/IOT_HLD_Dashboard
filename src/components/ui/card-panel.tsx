@@ -15,9 +15,11 @@ export function CardPanel({
     <section
       className={cn(
         "flex flex-col rounded-2xl border border-slate-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-900 p-5 shadow-sm",
-        className
+        className,
       )}
       {...props}
-    />
+    >
+      {children}
+    </section>
   );
 }
