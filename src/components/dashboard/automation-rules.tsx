@@ -9,39 +9,28 @@ import {
   MoreVertical,
   type LucideIcon,
 } from "lucide-react";
+import { CardPanel } from "@/components/ui/card-panel";
+import { PanelHeader } from "@/components/ui/panel-header";
+import { IconBubble } from "@/components/ui/icon-bubble";
+import { type ToneColor, ICON_BUBBLE_STYLES } from "@/lib/utils/tone-styles";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 export interface AutomationRule {
   id: number;
   name: string;
   icon: "home" | "lightbulb" | "shield";
-  iconColor: "teal" | "amber" | "red";
+  iconColor: ToneColor;
   trigger: string;
   condition: string;
   action: string;
   enabled: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Icon + color maps (with dark mode variants)
-// ---------------------------------------------------------------------------
 const ICON_MAP: Record<AutomationRule["icon"], LucideIcon> = {
   home: Home,
   lightbulb: Lightbulb,
   shield: ShieldAlert,
 };
 
-const ICON_STYLE: Record<AutomationRule["iconColor"], string> = {
-  teal: "bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400",
-  amber: "bg-amber-50 dark:bg-amber-900/30 text-amber-500 dark:text-amber-400",
-  red: "bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400",
-};
-
-// ---------------------------------------------------------------------------
-// Toggle switch
-// ---------------------------------------------------------------------------
 function Toggle({
   enabled,
   onChange,
@@ -67,9 +56,6 @@ function Toggle({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Table row
-// ---------------------------------------------------------------------------
 function RuleRow({
   rule,
   onToggle,
@@ -77,42 +63,30 @@ function RuleRow({
   rule: AutomationRule;
   onToggle: (id: number, v: boolean) => void;
 }) {
-  const Icon = ICON_MAP[rule.icon];
-
+  const icon = ICON_MAP[rule.icon];
   return (
     <tr className="group border-t border-slate-100 dark:border-slate-700/60 transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/60">
-      {/* Rule name + icon */}
       <td className="py-3.5 pl-4 pr-3">
         <div className="flex items-center gap-3">
-          <div
-            className={`grid size-8 shrink-0 place-items-center rounded-xl ${
-              ICON_STYLE[rule.iconColor]
-            }`}
-          >
-            <Icon className="size-4" strokeWidth={1.8} aria-hidden="true" />
-          </div>
+          <IconBubble
+            icon={icon}
+            colorClass={ICON_BUBBLE_STYLES[rule.iconColor]}
+            size="sm"
+          />
           <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
             {rule.name}
           </span>
         </div>
       </td>
-
-      {/* Trigger */}
       <td className="hidden px-3 py-3.5 text-sm text-slate-500 dark:text-slate-400 sm:table-cell">
         {rule.trigger}
       </td>
-
-      {/* Condition */}
       <td className="hidden px-3 py-3.5 text-sm text-slate-500 dark:text-slate-400 md:table-cell">
         {rule.condition}
       </td>
-
-      {/* Action */}
       <td className="hidden px-3 py-3.5 text-sm text-slate-500 dark:text-slate-400 lg:table-cell">
         {rule.action}
       </td>
-
-      {/* Status (toggle + 3-dot) */}
       <td className="py-3.5 pl-3 pr-4">
         <div className="flex items-center justify-end gap-3">
           <Toggle
@@ -135,9 +109,6 @@ function RuleRow({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Automation Rules panel
-// ---------------------------------------------------------------------------
 export function AutomationRules({
   rules: initialRules,
 }: {
@@ -152,73 +123,36 @@ export function AutomationRules({
   }
 
   return (
-    <section
-      className="rounded-2xl border border-slate-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-900 shadow-sm"
-      aria-labelledby="automation-rules-heading"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-4">
-        <div className="flex items-center gap-2">
-          <Settings2
-            className="size-4 text-slate-500 dark:text-slate-400"
-            strokeWidth={1.8}
-            aria-hidden="true"
-          />
-          <h2
-            id="automation-rules-heading"
-            className="text-sm font-semibold text-slate-900 dark:text-slate-100"
-          >
-            Automation Rules
-          </h2>
-        </div>
-        <a
-          href="#automations"
-          className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline"
-        >
-          View all
-        </a>
+    <CardPanel aria-labelledby="automation-rules-heading">
+      <div className="px-5 pt-5 pb-0">
+        <PanelHeader
+          icon={Settings2}
+          title="Automation Rules"
+          headingId="automation-rules-heading"
+          viewAllHref="#automations"
+        />
       </div>
-
-      {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full" aria-label="Automation rules">
-          {/* Column headers */}
+        <table className="w-full">
           <thead>
-            <tr className="border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-800/70">
-              <th
-                scope="col"
-                className="py-2.5 pl-4 pr-3 text-left text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide"
-              >
+            <tr className="border-b border-slate-200/80 dark:border-slate-700/60">
+              <th className="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                 Rule
               </th>
-              <th
-                scope="col"
-                className="hidden px-3 py-2.5 text-left text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide sm:table-cell"
-              >
+              <th className="hidden px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 sm:table-cell">
                 Trigger
               </th>
-              <th
-                scope="col"
-                className="hidden px-3 py-2.5 text-left text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide md:table-cell"
-              >
+              <th className="hidden px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 md:table-cell">
                 Condition
               </th>
-              <th
-                scope="col"
-                className="hidden px-3 py-2.5 text-left text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide lg:table-cell"
-              >
+              <th className="hidden px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 lg:table-cell">
                 Action
               </th>
-              <th
-                scope="col"
-                className="py-2.5 pl-3 pr-4 text-right text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide"
-              >
+              <th className="py-3 pl-3 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                 Status
               </th>
             </tr>
           </thead>
-
-          {/* Rows */}
           <tbody>
             {rules.map((rule) => (
               <RuleRow key={rule.id} rule={rule} onToggle={handleToggle} />
@@ -226,6 +160,6 @@ export function AutomationRules({
           </tbody>
         </table>
       </div>
-    </section>
+    </CardPanel>
   );
 }
