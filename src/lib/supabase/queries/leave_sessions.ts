@@ -2,16 +2,14 @@
  * Server-side CRUD actions for the `leave_sessions` table.
  */
 
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { TablesInsert, TablesUpdate } from "@/../database.types";
 
-// ─── Read ────────────────────────────────────────────────────────────────────
+// ─── Read ──────────────────────────────────────────────────────────────────────────────
 
 /** Fetch all leave sessions for a home, newest first. */
 export async function getLeaveSessionsByHomeId(homeId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("leave_sessions")
@@ -23,10 +21,9 @@ export async function getLeaveSessionsByHomeId(homeId: string) {
   return data;
 }
 
-/** Fetch the currently active (not-yet-ended) leave session for a home. */
+/** Fetch the current open leave session (no ended_at) for a home, or null. */
 export async function getActiveLeaveSession(homeId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("leave_sessions")
@@ -38,13 +35,12 @@ export async function getActiveLeaveSession(homeId: string) {
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  return data; // null when no active session exists
+  return data;
 }
 
-/** Fetch a single leave session by its UUID. */
+/** Fetch a single leave session by UUID. */
 export async function getLeaveSessionById(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("leave_sessions")
@@ -56,14 +52,13 @@ export async function getLeaveSessionById(id: string) {
   return data;
 }
 
-// ─── Create ──────────────────────────────────────────────────────────────────
+// ─── Create ─────────────────────────────────────────────────────────────────────────────
 
 /** Start a new leave session. */
 export async function createLeaveSession(
   payload: TablesInsert<"leave_sessions">,
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("leave_sessions")
@@ -75,15 +70,14 @@ export async function createLeaveSession(
   return data;
 }
 
-// ─── Update ──────────────────────────────────────────────────────────────────
+// ─── Update ─────────────────────────────────────────────────────────────────────────────
 
-/** Update a leave session (e.g. set ended_at or update metadata). */
+/** Update a leave session by UUID. */
 export async function updateLeaveSession(
   id: string,
   payload: TablesUpdate<"leave_sessions">,
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("leave_sessions")
@@ -96,17 +90,16 @@ export async function updateLeaveSession(
   return data;
 }
 
-/** Convenience: mark a leave session as ended now. */
+/** Convenience: close an open leave session by setting ended_at to now. */
 export async function endLeaveSession(id: string) {
   return updateLeaveSession(id, { ended_at: new Date().toISOString() });
 }
 
-// ─── Delete ──────────────────────────────────────────────────────────────────
+// ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
-/** Delete a leave session by its UUID. */
+/** Delete a leave session by UUID. */
 export async function deleteLeaveSession(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from("leave_sessions")

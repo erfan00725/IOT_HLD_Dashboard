@@ -1,9 +1,8 @@
 /**
  * Dashboard-specific query helpers.
- * All functions are server-only — they rely on `cookies()` from next/headers.
+ * All functions are server-only — they rely on `createClient` from server.ts.
  */
 
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -15,8 +14,7 @@ import { createClient } from "@/lib/supabase/server";
  * Joined with the `devices` table so the caller has name + category.
  */
 export async function getDashboardDeviceStates(homeId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("device_latest_states")
@@ -34,8 +32,7 @@ export async function getDashboardDeviceStates(homeId: string) {
  * Returns the most recent active (open) leave session for a home, or null.
  */
 export async function getActiveLeaveSessionForDashboard(homeId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("leave_sessions")
@@ -58,8 +55,7 @@ export async function getActiveLeaveSessionForDashboard(homeId: string) {
  * Returns all active reminder rules for a home, ordered by severity desc.
  */
 export async function getActiveReminderRulesForDashboard(homeId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("reminder_rules")
@@ -85,8 +81,7 @@ export async function getActiveReminderRulesForDashboard(homeId: string) {
  * Joined with `devices` for a human-readable name.
  */
 export async function getRecentStateEventsForDashboard(homeId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("device_state_events")
@@ -111,8 +106,7 @@ export async function getRecentStateEventsForDashboard(homeId: string) {
  * Includes device info for icon/colour resolution.
  */
 export async function getAllRulesForAutomationTable(homeId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("reminder_rules")
@@ -135,8 +129,7 @@ export async function getAllRulesForAutomationTable(homeId: string) {
 
 /** Returns the first home for the current authenticated user. */
 export async function getFirstHome() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const {
     data: { user },

@@ -2,18 +2,16 @@
  * Server-side CRUD actions for the `devices` table.
  */
 
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { Database, TablesInsert, TablesUpdate } from "@/../database.types";
 
 type DeviceCategory = Database["public"]["Enums"]["device_category"];
 
-// ─── Read ────────────────────────────────────────────────────────────────────
+// ─── Read ──────────────────────────────────────────────────────────────────────────────
 
 /** Fetch all devices for a given home. */
 export async function getDevicesByHomeId(homeId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("devices")
@@ -27,8 +25,7 @@ export async function getDevicesByHomeId(homeId: string) {
 
 /** Fetch devices belonging to a specific room. */
 export async function getDevicesByRoomId(roomId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("devices")
@@ -45,8 +42,7 @@ export async function getDevicesByCategory(
   homeId: string,
   category: DeviceCategory,
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("devices")
@@ -60,8 +56,7 @@ export async function getDevicesByCategory(
 
 /** Fetch a single device by its UUID. */
 export async function getDeviceById(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("devices")
@@ -75,8 +70,7 @@ export async function getDeviceById(id: string) {
 
 /** Fetch a single device by its external MQTT key. */
 export async function getDeviceByExternalKey(externalKey: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("devices")
@@ -88,12 +82,11 @@ export async function getDeviceByExternalKey(externalKey: string) {
   return data;
 }
 
-// ─── Create ──────────────────────────────────────────────────────────────────
+// ─── Create ─────────────────────────────────────────────────────────────────────────────
 
 /** Insert a new device. */
 export async function createDevice(payload: TablesInsert<"devices">) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("devices")
@@ -105,15 +98,14 @@ export async function createDevice(payload: TablesInsert<"devices">) {
   return data;
 }
 
-// ─── Update ──────────────────────────────────────────────────────────────────
+// ─── Update ─────────────────────────────────────────────────────────────────────────────
 
 /** Update a device by its UUID. */
 export async function updateDevice(
   id: string,
   payload: TablesUpdate<"devices">,
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("devices")
@@ -139,12 +131,11 @@ export async function toggleDeviceReminder(
   return updateDevice(id, { reminder_enabled: reminderEnabled });
 }
 
-// ─── Delete ──────────────────────────────────────────────────────────────────
+// ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
 /** Delete a device by its UUID. */
 export async function deleteDevice(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { error } = await supabase.from("devices").delete().eq("id", id);
 

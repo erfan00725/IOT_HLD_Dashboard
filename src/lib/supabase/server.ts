@@ -5,9 +5,14 @@ import { Database } from "@/../database.types";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-export const createClient = (
-  cookieStore: Awaited<ReturnType<typeof cookies>>,
-) => {
+/**
+ * Creates an authenticated Supabase client for server-side usage.
+ * Reads the cookie store internally so callers don't need to
+ * manage `cookies()` themselves.
+ */
+export const createClient = async () => {
+  const cookieStore = await cookies();
+
   return createServerClient<Database>(supabaseUrl!, supabaseKey!, {
     cookies: {
       getAll() {
@@ -19,9 +24,8 @@ export const createClient = (
             cookieStore.set(name, value, options),
           );
         } catch {
-          // The `setAll` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
+          // Called from a Server Component — safe to ignore.
+          // Middleware handles session refresh.
         }
       },
     },

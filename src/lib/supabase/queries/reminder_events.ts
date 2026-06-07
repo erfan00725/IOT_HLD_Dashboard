@@ -1,40 +1,31 @@
 /**
  * Server-side CRUD actions for the `reminder_events` table.
- * Rows are created by the IoT pipeline; the dashboard primarily reads them.
- * Deletion is supported for data-retention / admin use.
  */
 
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { Database, TablesInsert, TablesUpdate } from "@/../database.types";
+import { TablesInsert, TablesUpdate } from "@/../database.types";
 
-type DeliveryStatus = Database["public"]["Enums"]["delivery_status"];
+// ─── Read ──────────────────────────────────────────────────────────────────────────────
 
-// ─── Read ────────────────────────────────────────────────────────────────────
-
-/** Fetch reminder events for a home, newest first. */
-export async function getReminderEventsByHomeId(
-  homeId: string,
-  limit = 50,
-) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+/** Fetch all reminder events for a home. */
+export async function getReminderEventsByHomeId(homeId: string) {
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("reminder_events")
     .select("*")
     .eq("home_id", homeId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
   return data;
 }
 
-/** Fetch reminder events linked to a specific leave session. */
-export async function getReminderEventsByLeaveSession(leaveSessionId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+/** Fetch reminder events tied to a specific leave session. */
+export async function getReminderEventsByLeaveSession(
+  leaveSessionId: string,
+) {
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("reminder_events")
@@ -46,10 +37,9 @@ export async function getReminderEventsByLeaveSession(leaveSessionId: string) {
   return data;
 }
 
-/** Fetch a single reminder event by its auto-increment id. */
-export async function getReminderEventById(id: number) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+/** Fetch a single reminder event by UUID. */
+export async function getReminderEventById(id: string) {
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("reminder_events")
@@ -61,14 +51,13 @@ export async function getReminderEventById(id: number) {
   return data;
 }
 
-// ─── Create ──────────────────────────────────────────────────────────────────
+// ─── Create ─────────────────────────────────────────────────────────────────────────────
 
-/** Insert a new reminder event (usually called from the IoT pipeline). */
+/** Insert a new reminder event. */
 export async function createReminderEvent(
   payload: TablesInsert<"reminder_events">,
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("reminder_events")
@@ -80,15 +69,14 @@ export async function createReminderEvent(
   return data;
 }
 
-// ─── Update ──────────────────────────────────────────────────────────────────
+// ─── Update ─────────────────────────────────────────────────────────────────────────────
 
-/** Update a reminder event's delivery status or other mutable fields. */
+/** Update a reminder event by UUID. */
 export async function updateReminderEvent(
-  id: number,
+  id: string,
   payload: TablesUpdate<"reminder_events">,
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("reminder_events")
@@ -101,20 +89,19 @@ export async function updateReminderEvent(
   return data;
 }
 
-/** Convenience: mark a reminder event with a specific delivery status. */
+/** Convenience: mark a reminder event as delivered or failed. */
 export async function setReminderDeliveryStatus(
-  id: number,
-  status: DeliveryStatus,
+  id: string,
+  status: "delivered" | "failed",
 ) {
   return updateReminderEvent(id, { delivery_status: status });
 }
 
-// ─── Delete ──────────────────────────────────────────────────────────────────
+// ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
-/** Delete a single reminder event by id. */
-export async function deleteReminderEvent(id: number) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+/** Delete a reminder event by UUID. */
+export async function deleteReminderEvent(id: string) {
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from("reminder_events")

@@ -1,22 +1,19 @@
 /**
  * Server-side CRUD actions for the `device_state_events` table.
- * This is an append-only event log; rows are never updated.
- * Deletion is supported for administrative / data-retention purposes only.
+ * Rows are treated as an immutable event log — no update function is provided.
  */
 
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { TablesInsert } from "@/../database.types";
 
-// ─── Read ────────────────────────────────────────────────────────────────────
+// ─── Read ──────────────────────────────────────────────────────────────────────────────
 
-/** Fetch state-event history for a device, newest first. */
+/** Fetch recent state events for a specific device (newest first). */
 export async function getDeviceStateEvents(
   deviceExternalKey: string,
-  limit = 50,
+  limit = 20,
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("device_state_events")
@@ -29,37 +26,35 @@ export async function getDeviceStateEvents(
   return data;
 }
 
-/** Fetch all events for an entire home within an optional time range. */
+/** Fetch all events for a home, optionally filtered by a time range. */
 export async function getHomeStateEvents(
   homeId: string,
-  options?: { from?: string; to?: string; limit?: number },
+  opts?: { since?: string; until?: string; limit?: number },
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   let query = supabase
     .from("device_state_events")
     .select("*")
     .eq("home_id", homeId)
-    .order("observed_at", { ascending: false })
-    .limit(options?.limit ?? 100);
+    .order("observed_at", { ascending: false });
 
-  if (options?.from) query = query.gte("observed_at", options.from);
-  if (options?.to) query = query.lte("observed_at", options.to);
+  if (opts?.since)  query = query.gte("observed_at", opts.since);
+  if (opts?.until)  query = query.lte("observed_at", opts.until);
+  if (opts?.limit)  query = query.limit(opts.limit);
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
   return data;
 }
 
-// ─── Create ──────────────────────────────────────────────────────────────────
+// ─── Create ─────────────────────────────────────────────────────────────────────────────
 
 /** Insert a new device state event. */
 export async function createDeviceStateEvent(
   payload: TablesInsert<"device_state_events">,
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("device_state_events")
@@ -71,12 +66,11 @@ export async function createDeviceStateEvent(
   return data;
 }
 
-// ─── Delete ──────────────────────────────────────────────────────────────────
+// ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
-/** Delete a specific event record by its auto-increment id. */
+/** Delete a single event by its ID. */
 export async function deleteDeviceStateEvent(id: number) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from("device_state_events")
@@ -86,15 +80,13 @@ export async function deleteDeviceStateEvent(id: number) {
   if (error) throw new Error(error.message);
 }
 
-/** Delete all events older than a given ISO timestamp (data-retention helper). */
-export async function deleteEventsBefore(homeId: string, before: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+/** Delete all events observed before a given ISO timestamp. */
+export async function deleteEventsBefore(before: string) {
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from("device_state_events")
     .delete()
-    .eq("home_id", homeId)
     .lt("observed_at", before);
 
   if (error) throw new Error(error.message);

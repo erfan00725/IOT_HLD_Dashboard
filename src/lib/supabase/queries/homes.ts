@@ -1,33 +1,28 @@
 /**
  * Server-side CRUD actions for the `homes` table.
- * All functions use the server Supabase client and must be called
- * from Server Components, Route Handlers, or Server Actions.
  */
 
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { TablesInsert, TablesUpdate } from "@/../database.types";
 
-// ─── Read ────────────────────────────────────────────────────────────────────
+// ─── Read ──────────────────────────────────────────────────────────────────────────────
 
-/** Fetch all homes owned by the authenticated user. */
+/** Fetch all homes owned by the current user. */
 export async function getHomes() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("homes")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: true });
 
   if (error) throw new Error(error.message);
   return data;
 }
 
-/** Fetch a single home by its UUID. */
+/** Fetch a single home by UUID. */
 export async function getHomeById(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("homes")
@@ -41,8 +36,7 @@ export async function getHomeById(id: string) {
 
 /** Fetch a single home by its URL slug. */
 export async function getHomeBySlug(slug: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("homes")
@@ -54,12 +48,11 @@ export async function getHomeBySlug(slug: string) {
   return data;
 }
 
-// ─── Create ──────────────────────────────────────────────────────────────────
+// ─── Create ─────────────────────────────────────────────────────────────────────────────
 
 /** Insert a new home record. */
 export async function createHome(payload: TablesInsert<"homes">) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("homes")
@@ -71,12 +64,14 @@ export async function createHome(payload: TablesInsert<"homes">) {
   return data;
 }
 
-// ─── Update ──────────────────────────────────────────────────────────────────
+// ─── Update ─────────────────────────────────────────────────────────────────────────────
 
-/** Update an existing home by its UUID. */
-export async function updateHome(id: string, payload: TablesUpdate<"homes">) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+/** Update a home by UUID. */
+export async function updateHome(
+  id: string,
+  payload: TablesUpdate<"homes">,
+) {
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("homes")
@@ -89,12 +84,11 @@ export async function updateHome(id: string, payload: TablesUpdate<"homes">) {
   return data;
 }
 
-// ─── Delete ──────────────────────────────────────────────────────────────────
+// ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
-/** Delete a home by its UUID. */
+/** Delete a home by UUID. */
 export async function deleteHome(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { error } = await supabase.from("homes").delete().eq("id", id);
 

@@ -2,16 +2,14 @@
  * Server-side CRUD actions for the `rooms` table.
  */
 
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { TablesInsert, TablesUpdate } from "@/../database.types";
 
-// ─── Read ────────────────────────────────────────────────────────────────────
+// ─── Read ──────────────────────────────────────────────────────────────────────────────
 
-/** Fetch all rooms belonging to a home, ordered by sort_order. */
+/** Fetch all rooms for a given home, sorted by sort_order. */
 export async function getRoomsByHomeId(homeId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("rooms")
@@ -23,10 +21,9 @@ export async function getRoomsByHomeId(homeId: string) {
   return data;
 }
 
-/** Fetch a single room by its UUID. */
+/** Fetch a single room by UUID. */
 export async function getRoomById(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("rooms")
@@ -38,12 +35,11 @@ export async function getRoomById(id: string) {
   return data;
 }
 
-// ─── Create ──────────────────────────────────────────────────────────────────
+// ─── Create ─────────────────────────────────────────────────────────────────────────────
 
-/** Insert a new room record. */
+/** Insert a new room. */
 export async function createRoom(payload: TablesInsert<"rooms">) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("rooms")
@@ -55,12 +51,14 @@ export async function createRoom(payload: TablesInsert<"rooms">) {
   return data;
 }
 
-// ─── Update ──────────────────────────────────────────────────────────────────
+// ─── Update ─────────────────────────────────────────────────────────────────────────────
 
-/** Update a room by its UUID. */
-export async function updateRoom(id: string, payload: TablesUpdate<"rooms">) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+/** Update a room by UUID. */
+export async function updateRoom(
+  id: string,
+  payload: TablesUpdate<"rooms">,
+) {
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("rooms")
@@ -73,12 +71,11 @@ export async function updateRoom(id: string, payload: TablesUpdate<"rooms">) {
   return data;
 }
 
-// ─── Delete ──────────────────────────────────────────────────────────────────
+// ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
-/** Delete a room by its UUID. */
+/** Delete a room by UUID. */
 export async function deleteRoom(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { error } = await supabase.from("rooms").delete().eq("id", id);
 

@@ -1,114 +1,103 @@
 /**
- * Server-side CRUD actions for the `user` table.
- * This table extends user data beyond the `profiles` table
- * (avatar, full name, role, active flag, etc.).
+ * Server-side helpers that interact with Supabase Auth (`auth.users`).
+ * These wrap `supabase.auth.admin.*` for admin operations and
+ * `supabase.auth.getUser()` for the currently authenticated user.
  */
 
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { TablesInsert, TablesUpdate } from "@/../database.types";
 
-// ─── Read ────────────────────────────────────────────────────────────────────
+// ─── Read ──────────────────────────────────────────────────────────────────────────────
 
-/** Fetch all user records (admin/server use). */
+/** List all auth users (requires service-role key). */
 export async function getUsers() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("user")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const { data, error } = await supabase.auth.admin.listUsers();
 
   if (error) throw new Error(error.message);
-  return data;
+  return data.users;
 }
 
-/** Fetch a single user record by UUID. */
+/** Fetch a single auth user by UUID (requires service-role key). */
 export async function getUserById(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("user")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const { data, error } = await supabase.auth.admin.getUserById(id);
 
   if (error) throw new Error(error.message);
-  return data;
+  return data.user;
 }
 
-/** Fetch the authenticated user's own record. */
+/** Returns the currently authenticated user from the session cookie. */
 export async function getMyUser() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const {
-    data: { user: authUser },
-    error: authError,
+    data: { user },
+    error,
   } = await supabase.auth.getUser();
 
-  if (authError || !authUser) throw new Error("Not authenticated");
+  if (error) throw new Error(error.message);
+  return user;
+}
 
-  const { data, error } = await supabase
-    .from("user")
-    .select("*")
-    .eq("id", authUser.id)
-    .single();
+// ─── Create ─────────────────────────────────────────────────────────────────────────────
+
+/** Create a new auth user (requires service-role key). */
+export async function createUser(
+  email: string,
+  password: string,
+  options?: { email_confirm?: boolean },
+) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: options?.email_confirm ?? true,
+  });
 
   if (error) throw new Error(error.message);
-  return data;
+  return data.user;
 }
 
-// ─── Create ──────────────────────────────────────────────────────────────────
+// ─── Update ─────────────────────────────────────────────────────────────────────────────
 
-/** Insert a new user record. */
-export async function createUser(payload: TablesInsert<"user">) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+/** Update any auth user’s metadata (requires service-role key). */
+export async function updateUser(
+  id: string,
+  attributes: Parameters<ReturnType<typeof createClient> extends Promise<infer C> ? C["auth"]["admin"]["updateUserById"] : never>[1],
+) {
+  const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("user")
-    .insert(payload)
-    .select()
-    .single();
+  const { data, error } = await supabase.auth.admin.updateUserById(
+    id,
+    attributes,
+  );
 
   if (error) throw new Error(error.message);
-  return data;
+  return data.user;
 }
 
-// ─── Update ──────────────────────────────────────────────────────────────────
+/** Convenience: enable or disable a user account. */
+export async function setUserActive(id: string, active: boolean) {
+  const supabase = await createClient();
 
-/** Update a user record by UUID. */
-export async function updateUser(id: string, payload: TablesUpdate<"user">) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const { data, error } = await supabase
-    .from("user")
-    .update(payload)
-    .eq("id", id)
-    .select()
-    .single();
+  const { data, error } = await supabase.auth.admin.updateUserById(id, {
+    ban_duration: active ? "none" : "876600h", // ~100 years
+  });
 
   if (error) throw new Error(error.message);
-  return data;
+  return data.user;
 }
 
-/** Toggle a user's active status. */
-export async function setUserActive(id: string, isActive: boolean) {
-  return updateUser(id, { is_active: isActive });
-}
+// ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
-// ─── Delete ──────────────────────────────────────────────────────────────────
-
-/** Delete a user record by UUID. */
+/** Delete an auth user by UUID (requires service-role key). */
 export async function deleteUser(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
-  const { error } = await supabase.from("user").delete().eq("id", id);
+  const { error } = await supabase.auth.admin.deleteUser(id);
 
   if (error) throw new Error(error.message);
 }

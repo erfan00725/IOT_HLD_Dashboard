@@ -1,25 +1,21 @@
 /**
  * Server-side CRUD actions for the `profiles` table.
- * Profiles mirror the Supabase auth.users table — one row per auth user.
  */
 
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { TablesInsert, TablesUpdate } from "@/../database.types";
 
-// ─── Read ────────────────────────────────────────────────────────────────────
+// ─── Read ──────────────────────────────────────────────────────────────────────────────
 
-/** Fetch the authenticated user's own profile. */
+/** Fetch the profile for the currently authenticated user. */
 export async function getMyProfile() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) throw new Error("Not authenticated");
+  if (!user) throw new Error("Not authenticated");
 
   const { data, error } = await supabase
     .from("profiles")
@@ -31,10 +27,9 @@ export async function getMyProfile() {
   return data;
 }
 
-/** Fetch a profile by its UUID (auth user id). */
+/** Fetch any profile by UUID (admin/service use). */
 export async function getProfileById(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("profiles")
@@ -46,16 +41,11 @@ export async function getProfileById(id: string) {
   return data;
 }
 
-// ─── Create ──────────────────────────────────────────────────────────────────
+// ─── Create ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Insert a new profile row.
- * Normally triggered automatically via a Supabase database trigger
- * on auth.users insert; use this for manual creation or seeding.
- */
+/** Insert a profile record (normally handled by a DB trigger on auth.users). */
 export async function createProfile(payload: TablesInsert<"profiles">) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("profiles")
@@ -67,19 +57,19 @@ export async function createProfile(payload: TablesInsert<"profiles">) {
   return data;
 }
 
-// ─── Update ──────────────────────────────────────────────────────────────────
+// ─── Update ─────────────────────────────────────────────────────────────────────────────
 
-/** Update any mutable profile fields for the authenticated user. */
-export async function updateMyProfile(payload: TablesUpdate<"profiles">) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+/** Update the current user’s own profile. */
+export async function updateMyProfile(
+  payload: TablesUpdate<"profiles">,
+) {
+  const supabase = await createClient();
 
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) throw new Error("Not authenticated");
+  if (!user) throw new Error("Not authenticated");
 
   const { data, error } = await supabase
     .from("profiles")
@@ -92,13 +82,12 @@ export async function updateMyProfile(payload: TablesUpdate<"profiles">) {
   return data;
 }
 
-/** Update a profile by explicit id (admin/server use). */
+/** Update any profile by UUID (admin/service use). */
 export async function updateProfileById(
   id: string,
   payload: TablesUpdate<"profiles">,
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("profiles")
@@ -111,12 +100,11 @@ export async function updateProfileById(
   return data;
 }
 
-// ─── Delete ──────────────────────────────────────────────────────────────────
+// ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
-/** Delete a profile by UUID. Use with caution — normally cascades from auth. */
+/** Delete a profile by UUID. */
 export async function deleteProfile(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const { error } = await supabase.from("profiles").delete().eq("id", id);
 
