@@ -7,18 +7,7 @@ import {
   getDashboardDeviceStates,
   getFirstHome,
 } from "@/lib/supabase/queries/dashboard";
-
-/** A device is considered online when its state matches expected_safe_state. */
-function classifyDevice(stateValue: string, expectedSafeState: string): "Online" | "Warning" | "Offline" {
-  const v = stateValue?.toLowerCase() ?? "";
-  // Explicit offline markers
-  if (["offline", "disconnected", "unreachable", "error"].includes(v))
-    return "Offline";
-  // If state matches the expected safe state → online
-  if (v === expectedSafeState?.toLowerCase()) return "Online";
-  // Otherwise it's active but in an unsafe state → warning
-  return "Warning";
-}
+import { classifyDevice } from "@/lib/utils/device-health";
 
 export async function DeviceHealth() {
   const home = await getFirstHome();

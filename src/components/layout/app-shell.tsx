@@ -1,5 +1,3 @@
-"use client";
-
 import {
   LayoutDashboard,
   Cpu,
@@ -9,21 +7,33 @@ import {
   BarChart2,
   Settings,
   ShieldCheck,
+  ShieldAlert,
   HelpCircle,
   Home,
-  Moon,
-  Sun,
   ChevronDown,
   type LucideProps,
 } from "lucide-react";
+import type { FC, ReactNode } from "react";
 import { sidebarItems } from "@/data/mock";
-import React, { useEffect, useState } from "react";
-import { useTheme } from "@/context/theme-context";
+import { DarkModeToggle } from "@/components/layout/dark-mode-toggle";
+import { getMyProfile } from "@/lib/supabase/queries/profiles";
+import {
+  getDashboardDeviceStates,
+  getFirstHome,
+} from "@/lib/supabase/queries/dashboard";
+import {
+  summarizeDeviceHealth,
+  type DeviceHealthSummary,
+  type SystemHealthStatus,
+} from "@/lib/utils/device-health";
+import type { Tables } from "@/../database.types";
+
+type Profile = Tables<"profiles">;
 
 // ---------------------------------------------------------------------------
 // Icon registry — maps string names from mock data to Lucide components
 // ---------------------------------------------------------------------------
-const ICON_MAP: Record<string, React.FC<LucideProps>> = {
+const ICON_MAP: Record<string, FC<LucideProps>> = {
   LayoutDashboard,
   Cpu,
   Zap,
@@ -99,20 +109,47 @@ function NavItem({
 }
 
 // ---------------------------------------------------------------------------
-// Bottom status badge
+// Bottom status badge — driven by aggregated device health
 // ---------------------------------------------------------------------------
-function SystemStatus() {
+const SYSTEM_STATUS_CONFIG: Record<
+  SystemHealthStatus,
+  { label: string; sub: (s: DeviceHealthSummary) => string; bg: string }
+> = {
+  secure: {
+    label: "System Secure",
+    sub: () => "All systems normal",
+    bg: "bg-teal-600",
+  },
+  warning: {
+    label: "Attention Needed",
+    sub: (s) =>
+      `${s.warning} ${s.warning === 1 ? "device needs" : "devices need"} review`,
+    bg: "bg-amber-500",
+  },
+  offline: {
+    label: "Devices Offline",
+    sub: (s) =>
+      `${s.offline} ${s.offline === 1 ? "device is" : "devices are"} offline`,
+    bg: "bg-red-500",
+  },
+};
+
+function SystemStatus({ summary }: { summary: DeviceHealthSummary }) {
+  const cfg = SYSTEM_STATUS_CONFIG[summary.status];
+  const Icon = summary.status === "secure" ? ShieldCheck : ShieldAlert;
   return (
     <div className="flex items-center gap-3 rounded-xl px-3 py-2.5">
-      <div className="grid size-8 shrink-0 place-items-center rounded-full bg-teal-600 text-white shadow-sm">
-        <ShieldCheck className="size-4" strokeWidth={2} aria-hidden="true" />
+      <div
+        className={`grid size-8 shrink-0 place-items-center rounded-full text-white shadow-sm ${cfg.bg}`}
+      >
+        <Icon className="size-4" strokeWidth={2} aria-hidden="true" />
       </div>
       <div className="leading-tight">
         <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
-          System Secure
+          {cfg.label}
         </p>
         <p className="text-xs font-medium text-teal-600 dark:text-teal-400">
-          All systems normal
+          {cfg.sub(summary)}
         </p>
       </div>
     </div>
@@ -141,7 +178,7 @@ function HelpLink() {
 // ---------------------------------------------------------------------------
 // Sidebar
 // ---------------------------------------------------------------------------
-function Sidebar() {
+function Sidebar({ summary }: { summary: DeviceHealthSummary }) {
   return (
     <aside
       className="flex h-full flex-col border-r border-slate-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-900"
@@ -173,7 +210,7 @@ function Sidebar() {
 
       {/* Bottom section */}
       <div className="border-t border-slate-100 dark:border-slate-700/60 px-3 pb-6 pt-4">
-        <SystemStatus />
+        <SystemStatus summary={summary} />
         <div className="mt-1">
           <HelpLink />
         </div>
@@ -183,68 +220,11 @@ function Sidebar() {
 }
 
 // ---------------------------------------------------------------------------
-// Dark-mode toggle pill — connected to ThemeContext
-// ---------------------------------------------------------------------------
-function DarkModeToggle() {
-  const { isDark, toggleTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Avoid hydration mismatch by rendering nothing on the server
-  if (!mounted) return null;
-
-  return (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      className="flex items-center gap-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 transition-colors hover:text-slate-900 dark:hover:text-slate-100"
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-    >
-      {isDark ? (
-        <Sun
-          className="size-4.5 shrink-0 text-amber-400"
-          strokeWidth={1.8}
-          aria-hidden="true"
-        />
-      ) : (
-        <Moon
-          className="size-4.5 shrink-0 text-slate-500"
-          strokeWidth={1.8}
-          aria-hidden="true"
-        />
-      )}
-      <span className="hidden sm:inline">
-        {isDark ? "Light mode" : "Dark mode"}
-      </span>
-
-      {/* Pill toggle */}
-      <span
-        className={[
-          "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border-2 transition-colors duration-200",
-          isDark
-            ? "border-teal-500 bg-teal-500"
-            : "border-slate-300 bg-slate-200",
-        ].join(" ")}
-        aria-hidden="true"
-      >
-        <span
-          className={[
-            "inline-block size-4 rounded-full bg-white shadow-sm transition-transform duration-200",
-            isDark ? "translate-x-4" : "translate-x-0.5",
-          ].join(" ")}
-        />
-      </span>
-    </button>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // User menu button
 // ---------------------------------------------------------------------------
-function UserMenu() {
+function UserMenu({ profile }: { profile: Profile | null }) {
+  const displayName = profile?.display_name?.trim() || "Guest";
+  const initials = deriveInitials(profile);
   return (
     <button
       type="button"
@@ -253,10 +233,10 @@ function UserMenu() {
     >
       {/* Avatar */}
       <div className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-300">
-        E
+        {initials}
       </div>
       <span className="hidden text-sm font-medium text-slate-800 dark:text-slate-200 sm:inline">
-        Erfan
+        {displayName}
       </span>
       <ChevronDown
         className="size-4 text-slate-400 dark:text-slate-500"
@@ -267,20 +247,38 @@ function UserMenu() {
   );
 }
 
+/** Returns up to two uppercase initials from display_name, or "?" as fallback. */
+function deriveInitials(profile: Profile | null): string {
+  const name = profile?.display_name?.trim();
+  if (!name) return "?";
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase();
+  return (parts[0]!.charAt(0) + parts[parts.length - 1]!.charAt(0)).toUpperCase();
+}
+
 // ---------------------------------------------------------------------------
 // Page header — title + subtitle on the left, controls on the right
 // ---------------------------------------------------------------------------
-function PageHeader() {
+function PageHeader({
+  pageTitle,
+  pageSubtitle,
+  profile,
+}: {
+  pageTitle: string;
+  pageSubtitle: string;
+  profile: Profile | null;
+}) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 dark:border-slate-700/60 bg-white/90 dark:bg-slate-900/90 px-5 backdrop-blur-md sm:px-8">
       <div className="flex h-16 items-center justify-between gap-4">
         {/* Left: page title */}
         <div className="min-w-0">
           <h1 className="truncate text-lg font-bold leading-tight text-slate-900 dark:text-slate-100">
-            Dashboard
+            {pageTitle}
           </h1>
           <p className="truncate text-sm text-slate-500 dark:text-slate-400">
-            Overview of your home and leave detection
+            {pageSubtitle}
           </p>
         </div>
 
@@ -294,7 +292,7 @@ function PageHeader() {
             aria-hidden="true"
           />
 
-          <UserMenu />
+          <UserMenu profile={profile} />
         </div>
       </div>
     </header>
@@ -304,7 +302,42 @@ function PageHeader() {
 // ---------------------------------------------------------------------------
 // App shell
 // ---------------------------------------------------------------------------
-export function AppShell({ children }: { children: React.ReactNode }) {
+
+export interface AppShellProps {
+  children: ReactNode;
+  /** Title shown in the header. Defaults to "Dashboard". */
+  pageTitle?: string;
+  /** Subtitle shown under the title. */
+  pageSubtitle?: string;
+}
+
+const DEFAULT_PAGE_TITLE = "Dashboard";
+const DEFAULT_PAGE_SUBTITLE = "Overview of your home and leave detection";
+
+/**
+ * Server component. Fetches the chrome data (user profile, current home, and
+ * aggregated device health) so the user menu, system status badge, and page
+ * title reflect real database state. The client-only theme toggle is rendered
+ * via the `<DarkModeToggle />` island.
+ */
+export async function AppShell({
+  children,
+  pageTitle,
+  pageSubtitle,
+}: AppShellProps) {
+  // Profile lookup may fail for an authenticated user that has no profile row
+  // yet — fall back to a guest identity rather than crashing the whole shell.
+  let profile: Profile | null = null;
+  try {
+    profile = await getMyProfile();
+  } catch {
+    profile = null;
+  }
+
+  const home = await getFirstHome();
+  const deviceStates = home ? await getDashboardDeviceStates(home.id) : [];
+  const summary = summarizeDeviceHealth(deviceStates);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0f1117] text-slate-900 dark:text-slate-100">
       {/* Skip link for keyboard accessibility */}
@@ -319,13 +352,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Sidebar — hidden on mobile, visible from lg breakpoint */}
         <div className="hidden lg:block">
           <div className="sticky top-0 h-screen">
-            <Sidebar />
+            <Sidebar summary={summary} />
           </div>
         </div>
 
         {/* Main content area */}
         <div className="flex min-w-0 flex-col">
-          <PageHeader />
+          <PageHeader
+            pageTitle={pageTitle ?? DEFAULT_PAGE_TITLE}
+            pageSubtitle={pageSubtitle ?? DEFAULT_PAGE_SUBTITLE}
+            profile={profile}
+          />
           <main
             id="content"
             className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"

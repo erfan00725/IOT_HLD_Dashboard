@@ -20,7 +20,7 @@ export async function getDashboardDeviceStates(homeId: string) {
     .from("device_latest_states")
     .select(
       `device_external_key, state_value, last_seen_at,
-       devices!inner(name, category, expected_safe_state, active)`
+       devices!inner(name, category, expected_safe_state, active)`,
     )
     .eq("home_id", homeId);
 
@@ -61,7 +61,7 @@ export async function getActiveReminderRulesForDashboard(homeId: string) {
     .from("reminder_rules")
     .select(
       `id, reminder_text, severity, device_external_key,
-       devices!inner(name, category)`
+       devices!inner(name, category)`,
     )
     .eq("home_id", homeId)
     .eq("active", true)
@@ -87,7 +87,7 @@ export async function getRecentStateEventsForDashboard(homeId: string) {
     .from("device_state_events")
     .select(
       `id, device_external_key, state_value, observed_at,
-       devices!inner(name, category)`
+       devices!inner(name, category)`,
     )
     .eq("home_id", homeId)
     .order("observed_at", { ascending: false })
@@ -114,7 +114,7 @@ export async function getAllRulesForAutomationTable(homeId: string) {
       `id, reminder_text, severity, active,
        trigger_presence_state, trigger_device_state,
        device_external_key,
-       devices!inner(name, category)`
+       devices!inner(name, category)`,
     )
     .eq("home_id", homeId)
     .order("severity", { ascending: false });

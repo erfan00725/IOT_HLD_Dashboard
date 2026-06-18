@@ -9,6 +9,7 @@ import {
   getFirstHome,
 } from "@/lib/supabase/queries/dashboard";
 import { mapRuleToAutomation } from "@/lib/utils/dashboard-mappers";
+import { getHomes } from "@/lib/supabase/queries";
 
 export default async function Home() {
   // Fetch automation rules data at the page level (server-side)
@@ -16,8 +17,10 @@ export default async function Home() {
   const rawRules = home ? await getAllRulesForAutomationTable(home.id) : [];
   const automationRules = rawRules.map(mapRuleToAutomation);
 
+  const users = await getHomes();
+
   return (
-    <AppShell>
+    <AppShell pageTitle={home?.name}>
       <div className="grid gap-6">
         {/* ── Home Status hero row ───────────────────────────────── */}
         <HomeStatusSection />

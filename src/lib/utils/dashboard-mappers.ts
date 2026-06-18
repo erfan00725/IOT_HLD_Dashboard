@@ -108,7 +108,7 @@ export function categoryToIcon(
  */
 export function mapRuleToAutomation(row: AutomationRuleRow): AutomationRule {
   return {
-    id:        row.id as unknown as number, // component uses id as React key only
+    id:        row.id,
     name:      row.reminder_text,
     icon:      categoryToIcon(row.devices.category),
     iconColor: categoryToTone(row.devices.category),

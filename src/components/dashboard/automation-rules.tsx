@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import {
   Settings2,
   Home,
@@ -13,9 +13,10 @@ import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
 import { IconBubble } from "@/components/ui/icon-bubble";
 import { type ToneColor, ICON_BUBBLE_STYLES } from "@/lib/utils/tone-styles";
+import { toggleReminderRuleAction } from "@/lib/supabase/actions/reminder-rules";
 
 export interface AutomationRule {
-  id: number;
+  id: string;
   name: string;
   icon: "home" | "lightbulb" | "shield";
   iconColor: ToneColor;
@@ -34,16 +35,20 @@ const ICON_MAP: Record<AutomationRule["icon"], LucideIcon> = {
 function Toggle({
   enabled,
   onChange,
+  disabled,
 }: {
   enabled: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={enabled}
+      disabled={disabled}
       onClick={() => onChange(!enabled)}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-teal-500 ${
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-teal-500 disabled:cursor-not-allowed disabled:opacity-60 ${
         enabled ? "bg-teal-500" : "bg-slate-200 dark:bg-slate-700"
       }`}
     >
@@ -59,9 +64,11 @@ function Toggle({
 function RuleRow({
   rule,
   onToggle,
+  pending,
 }: {
   rule: AutomationRule;
-  onToggle: (id: number, v: boolean) => void;
+  onToggle: (id: string, v: boolean) => void;
+  pending: boolean;
 }) {
   const icon = ICON_MAP[rule.icon];
   return (
@@ -91,6 +98,7 @@ function RuleRow({
         <div className="flex items-center justify-end gap-3">
           <Toggle
             enabled={rule.enabled}
+            disabled={pending}
             onChange={(v) => onToggle(rule.id, v)}
           />
           <button
@@ -115,11 +123,23 @@ export function AutomationRules({
   rules: AutomationRule[];
 }) {
   const [rules, setRules] = useState(initialRules);
+  const [isPending, startTransition] = useTransition();
 
-  function handleToggle(id: number, value: boolean) {
+  function handleToggle(id: string, value: boolean) {
+    // Optimistic update so the toggle reacts instantly.
+    const previous = rules;
     setRules((prev) =>
       prev.map((r) => (r.id === id ? { ...r, enabled: value } : r)),
     );
+
+    // Persist to the database; revert on failure.
+    startTransition(async () => {
+      try {
+        await toggleReminderRuleAction(id, value);
+      } catch {
+        setRules(previous);
+      }
+    });
   }
 
   return (
@@ -155,7 +175,12 @@ export function AutomationRules({
           </thead>
           <tbody>
             {rules.map((rule) => (
-              <RuleRow key={rule.id} rule={rule} onToggle={handleToggle} />
+              <RuleRow
+                key={rule.id}
+                rule={rule}
+                onToggle={handleToggle}
+                pending={isPending}
+              />
             ))}
           </tbody>
         </table>

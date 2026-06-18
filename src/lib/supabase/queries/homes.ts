@@ -16,6 +16,8 @@ export async function getHomes() {
     .select("*")
     .order("created_at", { ascending: true });
 
+  console.log(data);
+
   if (error) throw new Error(error.message);
   return data;
 }
@@ -67,10 +69,7 @@ export async function createHome(payload: TablesInsert<"homes">) {
 // ─── Update ─────────────────────────────────────────────────────────────────────────────
 
 /** Update a home by UUID. */
-export async function updateHome(
-  id: string,
-  payload: TablesUpdate<"homes">,
-) {
+export async function updateHome(id: string, payload: TablesUpdate<"homes">) {
   const supabase = await createClient();
 
   const { data, error } = await supabase

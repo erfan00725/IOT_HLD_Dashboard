@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏠 IOT Home Leave Detection (HLD)
 
-## Getting Started
+### _Never forget something important when leaving home — again._
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 📖 Overview
+
+**IOT Home Leave Detection** is a smart IoT-powered web application that detects when a user leaves their home and sends them personalized reminders about things they might forget — such as turning off the lights, shutting off the gas stove, or grabbing their house keys.
+
+The system bridges the gap between physical IoT sensors and a modern web dashboard, giving users full visibility and control over their home status at the moment they leave.
+
+---
+
+## ✨ Features
+
+- 🚪 **Leave Detection** — Automatically detects when the user exits the home via IoT event triggers
+- 🔔 **Smart Reminders** — Sends contextual reminders for configurable checklist items (lights, gas, keys, etc.)
+- ⚙️ **Customizable Checklists** — Users can add, edit, or remove reminder items from their personal list
+- 📊 **Real-time Dashboard** — Live overview of home device states and reminder history
+- 🔌 **IoT Simulation** — Device interactions simulated and managed via Node-RED flows
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer          | Technology             |
+| -------------- | ---------------------- |
+| Frontend       | Next.js + Tailwind CSS |
+| Backend / DB   | Supabase (PostgreSQL)  |
+| IoT Simulation | Node-RED               |
+| Language       | TypeScript             |
+
+---
+
+## 🏗️ Architecture
+
+```
+IoT Sensors (simulated via Node-RED)
+        │
+        ▼
+   Event Triggers
+        │
+        ▼
+  Supabase (DB + Realtime)
+        │
+        ▼
+  Next.js Dashboard  ◄──► User
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+When a leave event is detected by the Node-RED flow, it updates the device/event state in Supabase. The Next.js dashboard subscribes to real-time changes and immediately notifies the user with their personalized reminder list.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🎓 About
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project was developed as part of a **university Internet of Things (IoT) course**, demonstrating practical integration of smart home concepts, real-time web technologies, and IoT device simulation.
