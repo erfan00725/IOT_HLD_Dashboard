@@ -3,7 +3,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { TablesInsert, TablesUpdate } from "@/../database.types";
+import { TablesInsert, TablesUpdate } from "@/lib/types/database.types";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
@@ -99,10 +99,7 @@ export async function toggleReminderRule(id: string, active: boolean) {
 export async function deleteReminderRule(id: string) {
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from("reminder_rules")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("reminder_rules").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
 }

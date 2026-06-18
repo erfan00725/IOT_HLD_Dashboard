@@ -3,7 +3,11 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { TablesInsert, TablesUpdate } from "@/../database.types";
+import {
+  Database,
+  TablesInsert,
+  TablesUpdate,
+} from "@/lib/types/database.types";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
@@ -22,9 +26,7 @@ export async function getReminderEventsByHomeId(homeId: string) {
 }
 
 /** Fetch reminder events tied to a specific leave session. */
-export async function getReminderEventsByLeaveSession(
-  leaveSessionId: string,
-) {
+export async function getReminderEventsByLeaveSession(leaveSessionId: string) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -38,7 +40,7 @@ export async function getReminderEventsByLeaveSession(
 }
 
 /** Fetch a single reminder event by UUID. */
-export async function getReminderEventById(id: string) {
+export async function getReminderEventById(id: number) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -73,7 +75,7 @@ export async function createReminderEvent(
 
 /** Update a reminder event by UUID. */
 export async function updateReminderEvent(
-  id: string,
+  id: number,
   payload: TablesUpdate<"reminder_events">,
 ) {
   const supabase = await createClient();
@@ -91,8 +93,8 @@ export async function updateReminderEvent(
 
 /** Convenience: mark a reminder event as delivered or failed. */
 export async function setReminderDeliveryStatus(
-  id: string,
-  status: "delivered" | "failed",
+  id: number,
+  status: Database["public"]["Enums"]["delivery_status"],
 ) {
   return updateReminderEvent(id, { delivery_status: status });
 }
@@ -100,7 +102,7 @@ export async function setReminderDeliveryStatus(
 // ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
 /** Delete a reminder event by UUID. */
-export async function deleteReminderEvent(id: string) {
+export async function deleteReminderEvent(id: number) {
   const supabase = await createClient();
 
   const { error } = await supabase

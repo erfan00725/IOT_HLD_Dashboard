@@ -3,7 +3,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { TablesInsert, TablesUpdate } from "@/../database.types";
+import { TablesInsert, TablesUpdate } from "@/lib/types/database.types";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 

@@ -5,6 +5,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { Database } from "@/lib/types/database.types";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
@@ -64,20 +65,20 @@ export async function createUser(
 // ─── Update ─────────────────────────────────────────────────────────────────────────────
 
 /** Update any auth user’s metadata (requires service-role key). */
-export async function updateUser(
-  id: string,
-  attributes: Parameters<ReturnType<typeof createClient> extends Promise<infer C> ? C["auth"]["admin"]["updateUserById"] : never>[1],
-) {
-  const supabase = await createClient();
+// export async function updateUser(
+//   id: string,
+//   attributes: Database["public"]["Tables"]["user"]["Update"],
+// ) {
+//   const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.admin.updateUserById(
-    id,
-    attributes,
-  );
+//   const { data, error } = await supabase.auth.admin.updateUserById(
+//     id,
+//     attributes,
+//   );
 
-  if (error) throw new Error(error.message);
-  return data.user;
-}
+//   if (error) throw new Error(error.message);
+//   return data.user;
+// }
 
 /** Convenience: enable or disable a user account. */
 export async function setUserActive(id: string, active: boolean) {

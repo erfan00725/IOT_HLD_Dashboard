@@ -3,7 +3,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { TablesInsert, TablesUpdate } from "@/../database.types";
+import { TablesInsert, TablesUpdate } from "@/lib/types/database.types";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
@@ -101,10 +101,7 @@ export async function endLeaveSession(id: string) {
 export async function deleteLeaveSession(id: string) {
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from("leave_sessions")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("leave_sessions").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
 }

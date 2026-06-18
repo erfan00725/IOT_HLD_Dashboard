@@ -3,7 +3,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { TablesInsert, TablesUpdate } from "@/../database.types";
+import { TablesInsert, TablesUpdate } from "@/lib/types/database.types";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
@@ -54,10 +54,7 @@ export async function createRoom(payload: TablesInsert<"rooms">) {
 // ─── Update ─────────────────────────────────────────────────────────────────────────────
 
 /** Update a room by UUID. */
-export async function updateRoom(
-  id: string,
-  payload: TablesUpdate<"rooms">,
-) {
+export async function updateRoom(id: string, payload: TablesUpdate<"rooms">) {
   const supabase = await createClient();
 
   const { data, error } = await supabase

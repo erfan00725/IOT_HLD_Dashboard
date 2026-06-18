@@ -1,4 +1,11 @@
-import { Bell, Home, Lightbulb, ShieldAlert, KeyRound, type LucideIcon } from "lucide-react";
+import {
+  Bell,
+  Home,
+  Lightbulb,
+  ShieldAlert,
+  KeyRound,
+  type LucideIcon,
+} from "lucide-react";
 import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
 import { IconBubble } from "@/components/ui/icon-bubble";
@@ -31,10 +38,14 @@ interface ReminderDisplayRow {
 
 function categoryToIcon(category: string): LucideIcon {
   switch (category) {
-    case "lighting": return Lightbulb;
-    case "safety":   return ShieldAlert;
-    case "access":   return KeyRound;
-    default:         return Home;
+    case "lighting":
+      return Lightbulb;
+    case "safety":
+      return ShieldAlert;
+    case "access":
+      return KeyRound;
+    default:
+      return Home;
   }
 }
 
@@ -63,10 +74,14 @@ function ReminderRow({ icon, title, sub, time, priority }: ReminderDisplayRow) {
         <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
           {title}
         </p>
-        <p className="truncate text-xs text-slate-400 dark:text-slate-500">{sub}</p>
+        <p className="truncate text-xs text-slate-400 dark:text-slate-500">
+          {sub}
+        </p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
-        <span className="text-xs text-slate-400 dark:text-slate-500">{time}</span>
+        <span className="text-xs text-slate-400 dark:text-slate-500">
+          {time}
+        </span>
         <PriorityBadge priority={priority} />
       </div>
     </li>
@@ -93,10 +108,10 @@ export async function ActiveReminders() {
     : [];
 
   const reminders: ReminderDisplayRow[] = rawRules.map((rule) => ({
-    icon:     categoryToIcon(rule.devices.category),
-    title:    rule.reminder_text,
-    sub:      rule.devices.name,
-    time:     formatTime(rule.created_at ?? new Date().toISOString()),
+    icon: categoryToIcon(rule.devices.category),
+    title: rule.reminder_text,
+    sub: rule.devices.name,
+    time: formatTime(rule.created_at ?? new Date().toISOString()),
     priority: severityToPriority(rule.severity),
   }));
 
@@ -109,9 +124,11 @@ export async function ActiveReminders() {
         viewAllHref="#reminders"
       />
       <ul className="grid gap-4">
-        {reminders.length > 0
-          ? reminders.map((r) => <ReminderRow key={r.title} {...r} />)
-          : <NoReminders />}
+        {reminders.length > 0 ? (
+          reminders.map((r) => <ReminderRow key={r.title} {...r} />)
+        ) : (
+          <NoReminders />
+        )}
       </ul>
     </CardPanel>
   );

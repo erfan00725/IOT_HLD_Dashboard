@@ -61,7 +61,7 @@ export async function getActiveReminderRulesForDashboard(homeId: string) {
     .from("reminder_rules")
     .select(
       `id, reminder_text, severity, device_external_key,
-       devices!inner(name, category)`,
+       devices!inner(name, category), created_at`,
     )
     .eq("home_id", homeId)
     .eq("active", true)

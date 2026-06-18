@@ -3,7 +3,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { TablesInsert, TablesUpdate } from "@/../database.types";
+import { TablesInsert, TablesUpdate } from "@/lib/types/database.types";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
@@ -60,9 +60,7 @@ export async function createProfile(payload: TablesInsert<"profiles">) {
 // ─── Update ─────────────────────────────────────────────────────────────────────────────
 
 /** Update the current user’s own profile. */
-export async function updateMyProfile(
-  payload: TablesUpdate<"profiles">,
-) {
+export async function updateMyProfile(payload: TablesUpdate<"profiles">) {
   const supabase = await createClient();
 
   const {

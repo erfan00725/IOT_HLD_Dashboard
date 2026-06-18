@@ -3,7 +3,11 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { Database, TablesInsert, TablesUpdate } from "@/../database.types";
+import {
+  Database,
+  TablesInsert,
+  TablesUpdate,
+} from "@/lib/types/database.types";
 
 type DeviceCategory = Database["public"]["Enums"]["device_category"];
 

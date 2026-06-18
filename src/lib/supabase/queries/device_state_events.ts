@@ -4,7 +4,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { TablesInsert } from "@/../database.types";
+import { TablesInsert } from "@/lib/types/database.types";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
@@ -39,9 +39,9 @@ export async function getHomeStateEvents(
     .eq("home_id", homeId)
     .order("observed_at", { ascending: false });
 
-  if (opts?.since)  query = query.gte("observed_at", opts.since);
-  if (opts?.until)  query = query.lte("observed_at", opts.until);
-  if (opts?.limit)  query = query.limit(opts.limit);
+  if (opts?.since) query = query.gte("observed_at", opts.since);
+  if (opts?.until) query = query.lte("observed_at", opts.until);
+  if (opts?.limit) query = query.limit(opts.limit);
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
