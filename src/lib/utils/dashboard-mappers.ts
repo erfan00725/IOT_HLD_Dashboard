@@ -5,6 +5,7 @@
 
 import type { Priority, ToneColor } from "@/lib/utils/tone-styles";
 import type { AutomationRule } from "@/components/dashboard/automation-rules";
+import { Database } from "../types/database.types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared types (inferred from Supabase join shapes)
@@ -63,7 +64,7 @@ export function severityToPriority(severity: number): Priority {
 // Category → tone colour for icon bubbles
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function categoryToTone(category: string): ToneColor {
+export function categoryToTone(category?: string): ToneColor {
   switch (category) {
     case "presence":
       return "teal";
@@ -85,9 +86,7 @@ export function categoryToTone(category: string): ToneColor {
 // Device icon name used in AutomationRules
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function categoryToIcon(
-  category: string
-): AutomationRule["icon"] {
+export function categoryToIcon(category?: string): AutomationRule["icon"] {
   switch (category) {
     case "lighting":
       return "lightbulb";
@@ -106,16 +105,18 @@ export function categoryToIcon(
  * Converts a raw `reminder_rules` row (with joined `devices`) into the
  * `AutomationRule` shape expected by the `<AutomationRules>` client component.
  */
-export function mapRuleToAutomation(row: AutomationRuleRow): AutomationRule {
+export function mapRuleToAutomation(
+  row: Database["public"]["Tables"]["reminder_rules"]["Row"],
+): AutomationRule {
   return {
-    id:        row.id,
-    name:      row.reminder_text,
-    icon:      categoryToIcon(row.devices.category),
-    iconColor: categoryToTone(row.devices.category),
-    trigger:   `Presence: ${row.trigger_presence_state}`,
+    id: row.id,
+    name: row.reminder_text,
+    icon: categoryToIcon(),
+    iconColor: categoryToTone(),
+    trigger: `Presence: ${row.trigger_presence_state}`,
     condition: `Device state = ${row.trigger_device_state}`,
-    action:    row.devices.name,
-    enabled:   row.active,
+    action: row.reminder_text,
+    enabled: row.active,
   };
 }
 

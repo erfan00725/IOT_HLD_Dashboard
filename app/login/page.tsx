@@ -1,32 +1,32 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { login } from './actions'
+import { useState } from "react";
+import { login } from "./actions";
 
 /**
  * Login page with email/password form.
  * Uses Tailwind for styling, consistent with the project's design system.
  */
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(formData: FormData) {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
-    const result = await login(formData)
+    const result = await login(formData);
 
     if (result?.error) {
-      setError(result.error)
-      setLoading(false)
+      setError(result.error);
+      setLoading(false);
     }
     // On success, the server action redirects to /dashboard
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
+      <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
         {/* Logo / Title */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -93,10 +93,10 @@ export default function LoginPage() {
                        text-white font-semibold rounded-lg transition-colors text-sm
                        focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
       </div>
     </div>
-  )
+  );
 }

@@ -14,6 +14,7 @@ export async function getMyProfile() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  console.log("prfile", user);
 
   if (!user) throw new Error("Not authenticated");
 

@@ -16,8 +16,6 @@ export async function getHomes() {
     .select("*")
     .order("created_at", { ascending: true });
 
-  console.log(data);
-
   if (error) throw new Error(error.message);
   return data;
 }
