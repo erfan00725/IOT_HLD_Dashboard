@@ -24,6 +24,8 @@ export async function getDashboardDeviceStates(homeId: string) {
     )
     .eq("home_id", homeId);
 
+  console.log(data);
+
   if (error) throw new Error(error.message);
   return data ?? [];
 }

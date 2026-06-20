@@ -6,8 +6,6 @@ import { updateSession } from "@/lib/supabase/proxy";
  * Keeps Server Components from seeing stale or expired tokens.
  */
 export async function proxy(request: NextRequest) {
-  console.log("proxy");
-
   return await updateSession(request);
 }
 

@@ -5,6 +5,10 @@
  * server components (DeviceHealth chart, AppShell SystemStatus) and tests.
  */
 
+import { getDashboardDeviceStates } from "../supabase/queries/dashboard";
+import { DashboardDeviceStateType } from "../types/customeTypes";
+import { Database } from "../types/database.types";
+
 // Shape returned by `getDashboardDeviceStates` in `queries/dashboard.ts`.
 export interface DeviceStateEntry {
   state_value: string;
@@ -18,15 +22,14 @@ export type DeviceClass = "Online" | "Warning" | "Offline";
 
 /** A device is considered online when its state matches expected_safe_state. */
 export function classifyDevice(
-  stateValue: string,
+  stateValue: Database["public"]["Enums"]["device_status"],
   expectedSafeState: string,
 ): DeviceClass {
   const v = stateValue?.toLowerCase() ?? "";
-  // Explicit offline markers
-  if (["offline", "disconnected", "unreachable", "error"].includes(v))
-    return "Offline";
   // If state matches the expected safe state → online
   if (v === expectedSafeState?.toLowerCase()) return "Online";
+  // Explicit offline markers
+  if (v === "off") return "Offline";
   // Otherwise it's active but in an unsafe state → warning
   return "Warning";
 }
@@ -55,7 +58,7 @@ const EMPTY_SUMMARY: DeviceHealthSummary = {
  * a coarse `status`. Only `active` devices are counted.
  */
 export function summarizeDeviceHealth(
-  states: DeviceStateEntry[],
+  states: DashboardDeviceStateType[],
 ): DeviceHealthSummary {
   const active = states.filter((s) => s.devices.active);
   const total = active.length;

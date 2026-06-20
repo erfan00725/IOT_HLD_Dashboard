@@ -6,6 +6,9 @@
 import type { Priority, ToneColor } from "@/lib/utils/tone-styles";
 import type { AutomationRule } from "@/components/dashboard/automation-rules";
 import { Database } from "../types/database.types";
+import { getAllRulesForAutomationTable } from "../supabase/queries/dashboard";
+import { ArrayElement } from "./type-utils";
+import { RulesAutomationType } from "../types/customeTypes";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared types (inferred from Supabase join shapes)
@@ -105,14 +108,12 @@ export function categoryToIcon(category?: string): AutomationRule["icon"] {
  * Converts a raw `reminder_rules` row (with joined `devices`) into the
  * `AutomationRule` shape expected by the `<AutomationRules>` client component.
  */
-export function mapRuleToAutomation(
-  row: Database["public"]["Tables"]["reminder_rules"]["Row"],
-): AutomationRule {
+export function mapRuleToAutomation(row: RulesAutomationType): AutomationRule {
   return {
     id: row.id,
     name: row.reminder_text,
-    icon: categoryToIcon(),
-    iconColor: categoryToTone(),
+    icon: categoryToIcon(row.devices.category || undefined),
+    iconColor: categoryToTone(row.devices.category || undefined),
     trigger: `Presence: ${row.trigger_presence_state}`,
     condition: `Device state = ${row.trigger_device_state}`,
     action: row.reminder_text,

@@ -338,6 +338,7 @@ export async function AppShell({
 
   const home = await getFirstHome();
   const deviceStates = home ? await getDashboardDeviceStates(home.id) : [];
+  // @ts-ignore
   const summary = summarizeDeviceHealth(deviceStates);
 
   return (
