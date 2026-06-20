@@ -71,7 +71,7 @@ function ReminderRow({ icon, title, sub, time, priority }: ReminderDisplayRow) {
     <li className="flex items-center gap-3">
       <IconBubble icon={icon} colorClass={ICON_BUBBLE_STYLES[tone]} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
+        <p className="truncate text-sm font-semibold max-w-full text-slate-800 dark:text-slate-200">
           {title}
         </p>
         <p className="truncate text-xs text-slate-400 dark:text-slate-500">
@@ -123,7 +123,7 @@ export async function ActiveReminders() {
         headingId="reminders-heading"
         viewAllHref="#reminders"
       />
-      <ul className="grid gap-4">
+      <ul className="flex flex-col gap-4 w-full">
         {reminders.length > 0 ? (
           reminders.map((r) => <ReminderRow key={r.title} {...r} />)
         ) : (
