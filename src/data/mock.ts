@@ -1,6 +1,6 @@
 export const sidebarItems = [
-  { label: "Dashboard", href: "#", icon: "LayoutDashboard", active: true },
-  { label: "Devices", href: "#devices", icon: "Cpu" },
+  { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
+  { label: "Devices", href: "/devices", icon: "Cpu" },
   { label: "Automations", href: "#automations", icon: "Zap" },
   { label: "Events", href: "#history", icon: "CalendarClock" },
   { label: "Reminders", href: "#reminders", icon: "Bell" },

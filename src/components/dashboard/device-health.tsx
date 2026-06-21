@@ -29,7 +29,7 @@ export interface DeviceHealthProps {
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
 
-// @ts-ignore
+// @ts-expect-error
 function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
   if (!active || !payload?.length) return null;
   const { name, value, pct } = payload[0].payload as {
@@ -159,7 +159,7 @@ export function DeviceHealthChart({
                 endAngle={-270}
                 dataKey="value"
                 labelLine={false}
-                // @ts-ignore — recharts label prop accepts a render function
+                // recharts label prop accepts a render function
                 label={<CentreLabel total={total} />}
                 isAnimationActive
                 animationBegin={0}

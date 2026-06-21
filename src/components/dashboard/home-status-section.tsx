@@ -9,12 +9,8 @@ import {
   RefreshCw,
   type LucideIcon,
 } from "lucide-react";
-import {
-  type ToneColor,
-  ICON_BUBBLE_STYLES,
-  STATUS_TILE_ICON_STYLES,
-} from "@/lib/utils/tone-styles";
-import { CardPanel, PanelHeader } from "../ui";
+import { type ToneColor } from "@/lib/utils/tone-styles";
+import { CardPanel, PanelHeader, StatusTile } from "../ui";
 import {
   getDashboardDeviceStates,
   getActiveLeaveSessionForDashboard,
@@ -24,37 +20,11 @@ import { formatTime } from "@/lib/utils/dashboard-mappers";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface StatusTile {
+interface StatusTileData {
   icon: LucideIcon;
   label: string;
   sub: string;
   tone: ToneColor;
-}
-
-// ─── Sub-components (unchanged from original) ────────────────────────────────
-
-function StatusTile({ icon: Icon, label, sub, tone }: StatusTile) {
-  return (
-    <div
-      className={`flex flex-col items-start gap-3 rounded-2xl ${
-        ICON_BUBBLE_STYLES[tone]
-      } p-4 transition-shadow hover:shadow-sm`}
-    >
-      <Icon
-        className={`size-7 ${STATUS_TILE_ICON_STYLES[tone]}`}
-        strokeWidth={1.6}
-        aria-hidden="true"
-      />
-      <div className="leading-tight">
-        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-          {label}
-        </p>
-        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          {sub}
-        </p>
-      </div>
-    </div>
-  );
 }
 
 const HeaderActions = () => (
@@ -81,14 +51,39 @@ export async function HomeStatusSection() {
   const home = await getFirstHome();
 
   // When no home exists yet, render with sensible placeholder tiles
-  const tiles: StatusTile[] = await (async () => {
+  const tiles: StatusTileData[] = await (async () => {
     if (!home) {
       return [
-        { icon: PersonStanding, label: "Home",       sub: "No home configured", tone: "slate" as ToneColor },
-        { icon: Lightbulb,      label: "Lights",     sub: "No data",            tone: "slate" as ToneColor },
-        { icon: Grid2x2,        label: "Stove",      sub: "No data",            tone: "slate" as ToneColor },
-        { icon: KeyRound,       label: "Keys",       sub: "No data",            tone: "slate" as ToneColor },
-        { icon: LockKeyhole,    label: "Door",       sub: "No data",            tone: "slate" as ToneColor },
+        {
+          icon: PersonStanding,
+          label: "Home",
+          sub: "No home configured",
+          tone: "slate" as ToneColor,
+        },
+        {
+          icon: Lightbulb,
+          label: "Lights",
+          sub: "No data",
+          tone: "slate" as ToneColor,
+        },
+        {
+          icon: Grid2x2,
+          label: "Stove",
+          sub: "No data",
+          tone: "slate" as ToneColor,
+        },
+        {
+          icon: KeyRound,
+          label: "Keys",
+          sub: "No data",
+          tone: "slate" as ToneColor,
+        },
+        {
+          icon: LockKeyhole,
+          label: "Door",
+          sub: "No data",
+          tone: "slate" as ToneColor,
+        },
       ];
     }
 
@@ -98,30 +93,36 @@ export async function HomeStatusSection() {
     ]);
 
     // ── Presence tile ──────────────────────────────────────────────────────
-    const presenceTile: StatusTile = activeSession
+    const presenceTile: StatusTileData = activeSession
       ? {
           icon: PersonStanding,
           label: "Away",
           sub: `Since ${formatTime(activeSession.started_at)}`,
           tone: "teal",
         }
-      : { icon: PersonStanding, label: "Home", sub: "You are home", tone: "slate" };
+      : {
+          icon: PersonStanding,
+          label: "Home",
+          sub: "You are home",
+          tone: "slate",
+        };
 
     // ── Helpers ────────────────────────────────────────────────────────────
     const findByCategory = (cat: string) =>
+      // @ts-expect-error
       deviceStates.find((d) => d.devices.category === cat);
 
-    const stateOf = (cat: string) =>
-      findByCategory(cat)?.state_value ?? null;
+    const stateOf = (cat: string) => findByCategory(cat)?.state_value ?? null;
 
     // ── Lighting tile ──────────────────────────────────────────────────────
     const lightingStates = deviceStates.filter(
-      (d) => d.devices.category === "lighting"
+      // @ts-expect-error
+      (d) => d.devices.category === "lighting",
     );
     const lightsOnCount = lightingStates.filter(
-      (d) => d.state_value.toLowerCase() !== "off"
+      (d) => d.state_value.toLowerCase() !== "off",
     ).length;
-    const lightingTile: StatusTile =
+    const lightingTile: StatusTileData =
       lightsOnCount > 0
         ? {
             icon: Lightbulb,
@@ -129,34 +130,69 @@ export async function HomeStatusSection() {
             sub: `${lightsOnCount} device${lightsOnCount > 1 ? "s" : ""}`,
             tone: "amber",
           }
-        : { icon: Lightbulb, label: "Lights Off", sub: "All clear", tone: "teal" };
+        : {
+            icon: Lightbulb,
+            label: "Lights Off",
+            sub: "All clear",
+            tone: "teal",
+          };
 
     // ── Safety (stove) tile ────────────────────────────────────────────────
     const safetyState = stateOf("safety");
-    const stoveTile: StatusTile =
+    const stoveTile: StatusTileData =
       safetyState === null
-        ? { icon: Grid2x2, label: "Stove",   sub: "No sensor",  tone: "slate" }
+        ? { icon: Grid2x2, label: "Stove", sub: "No sensor", tone: "slate" }
         : safetyState.toLowerCase() === "safe"
-        ? { icon: Grid2x2, label: "Stove Off", sub: "All Clear", tone: "teal" }
-        : { icon: Grid2x2, label: "Stove On",  sub: "Check stove", tone: "red" };
+          ? {
+              icon: Grid2x2,
+              label: "Stove Off",
+              sub: "All Clear",
+              tone: "teal",
+            }
+          : {
+              icon: Grid2x2,
+              label: "Stove On",
+              sub: "Check stove",
+              tone: "red",
+            };
 
     // ── Presence / key tile ────────────────────────────────────────────────
     const accessState = stateOf("access");
-    const keyTile: StatusTile =
+    const keyTile: StatusTileData =
       accessState === null
-        ? { icon: KeyRound, label: "Keys",         sub: "No tracker",    tone: "slate" }
+        ? { icon: KeyRound, label: "Keys", sub: "No tracker", tone: "slate" }
         : accessState.toLowerCase() === "detected"
-        ? { icon: KeyRound, label: "Keys Detected", sub: "Found nearby",  tone: "teal" }
-        : { icon: KeyRound, label: "Keys Missing",  sub: "Not detected",  tone: "red" };
+          ? {
+              icon: KeyRound,
+              label: "Keys Detected",
+              sub: "Found nearby",
+              tone: "teal",
+            }
+          : {
+              icon: KeyRound,
+              label: "Keys Missing",
+              sub: "Not detected",
+              tone: "red",
+            };
 
     // ── Door tile ──────────────────────────────────────────────────────────
     const doorState = stateOf("opening");
-    const doorTile: StatusTile =
+    const doorTile: StatusTileData =
       doorState === null
-        ? { icon: LockKeyhole, label: "Door",        sub: "No sensor",  tone: "slate" }
+        ? { icon: LockKeyhole, label: "Door", sub: "No sensor", tone: "slate" }
         : doorState.toLowerCase() === "locked"
-        ? { icon: LockKeyhole, label: "Door Locked",   sub: "Front Door", tone: "teal" }
-        : { icon: LockKeyhole, label: "Door Unlocked",  sub: "Front Door", tone: "red" };
+          ? {
+              icon: LockKeyhole,
+              label: "Door Locked",
+              sub: "Front Door",
+              tone: "teal",
+            }
+          : {
+              icon: LockKeyhole,
+              label: "Door Unlocked",
+              sub: "Front Door",
+              tone: "red",
+            };
 
     return [presenceTile, lightingTile, stoveTile, keyTile, doorTile];
   })();

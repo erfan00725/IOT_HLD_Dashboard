@@ -14,6 +14,8 @@ import {
   type LucideProps,
 } from "lucide-react";
 import type { FC, ReactNode } from "react";
+import Link from "next/link";
+import { headers } from "next/headers";
 import { sidebarItems } from "@/data/mock";
 import { DarkModeToggle } from "@/components/layout/dark-mode-toggle";
 import { getMyProfile } from "@/lib/supabase/queries/profiles";
@@ -81,28 +83,45 @@ function NavItem({
   icon: string;
   active?: boolean;
 }) {
-  return (
-    <a
-      href={href}
+  const className = [
+    "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150",
+    active
+      ? "bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
+      : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100",
+  ].join(" ");
+
+  const iconEl = (
+    <NavIcon
+      name={icon}
       className={[
-        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150",
+        "size-4.5 shrink-0 transition-colors duration-150",
         active
-          ? "bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
-          : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100",
+          ? "text-teal-600 dark:text-teal-400"
+          : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300",
       ].join(" ")}
-      aria-current={active ? "page" : undefined}
-    >
-      <NavIcon
-        name={icon}
-        className={[
-          "size-4.5 shrink-0 transition-colors duration-150",
-          active
-            ? "text-teal-600 dark:text-teal-400"
-            : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300",
-        ].join(" ")}
-        strokeWidth={1.8}
-        aria-hidden="true"
-      />
+      strokeWidth={1.8}
+      aria-hidden="true"
+    />
+  );
+
+  // Real routes use next/link for client-side navigation; in-page hash links
+  // (placeholders for routes not yet built) stay as plain anchors.
+  if (href.startsWith("/")) {
+    return (
+      <Link
+        href={href}
+        className={className}
+        aria-current={active ? "page" : undefined}
+      >
+        {iconEl}
+        {label}
+      </Link>
+    );
+  }
+
+  return (
+    <a href={href} className={className} aria-current={active ? "page" : undefined}>
+      {iconEl}
       {label}
     </a>
   );
@@ -178,7 +197,28 @@ function HelpLink() {
 // ---------------------------------------------------------------------------
 // Sidebar
 // ---------------------------------------------------------------------------
-function Sidebar({ summary }: { summary: DeviceHealthSummary }) {
+
+/**
+ * Determines whether a sidebar item is the active one for the given pathname.
+ * Real routes (starting with "/") are matched by prefix; hash placeholders
+ * are never considered active.
+ */
+function isActiveNav(href: string, pathname: string): boolean {
+  if (!href.startsWith("/")) return false;
+  if (href === "/dashboard") {
+    // Dashboard is the landing route — only active on an exact match.
+    return pathname === "/dashboard" || pathname === "/";
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function Sidebar({
+  summary,
+  pathname,
+}: {
+  summary: DeviceHealthSummary;
+  pathname: string;
+}) {
   return (
     <aside
       className="flex h-full flex-col border-r border-slate-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-900"
@@ -201,7 +241,7 @@ function Sidebar({ summary }: { summary: DeviceHealthSummary }) {
                 label={item.label}
                 href={item.href}
                 icon={item.icon}
-                active={item.active}
+                active={isActiveNav(item.href, pathname)}
               />
             </li>
           ))}
@@ -338,8 +378,12 @@ export async function AppShell({
 
   const home = await getFirstHome();
   const deviceStates = home ? await getDashboardDeviceStates(home.id) : [];
-  // @ts-ignore
+  // @ts-expect-error
   const summary = summarizeDeviceHealth(deviceStates);
+
+  // Read the current pathname (set by the proxy middleware) so the sidebar
+  // can highlight the active route. Falls back to "/" if unavailable.
+  const pathname = (await headers()).get("x-pathname") ?? "/";
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0f1117] text-slate-900 dark:text-slate-100">
@@ -355,7 +399,7 @@ export async function AppShell({
         {/* Sidebar — hidden on mobile, visible from lg breakpoint */}
         <div className="hidden lg:block">
           <div className="sticky top-0 h-screen">
-            <Sidebar summary={summary} />
+            <Sidebar summary={summary} pathname={pathname} />
           </div>
         </div>
 

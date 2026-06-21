@@ -34,7 +34,7 @@ export default async function DashboardPage() {
   // Fetch automation rules data at the page level (server-side)
   const home = await getFirstHome();
   const rawRules = home ? await getAllRulesForAutomationTable(home.id) : [];
-  // @ts-ignore
+  // @ts-expect-error
   const automationRules = rawRules.map(mapRuleToAutomation);
 
   return (

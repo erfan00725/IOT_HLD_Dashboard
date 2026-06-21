@@ -30,12 +30,18 @@ interface LeaveEvent {
 
 function categoryToIcon(category: string): LucideIcon {
   switch (category) {
-    case "presence": return PersonStanding;
-    case "lighting": return Lightbulb;
-    case "access":   return KeyRound;
-    case "opening":  return LockKeyhole;
-    case "safety":   return ShieldAlert;
-    default:         return Clock;
+    case "presence":
+      return PersonStanding;
+    case "lighting":
+      return Lightbulb;
+    case "access":
+      return KeyRound;
+    case "opening":
+      return LockKeyhole;
+    case "safety":
+      return ShieldAlert;
+    default:
+      return Clock;
   }
 }
 
@@ -49,7 +55,9 @@ function EventRow({ icon, time, title, sub }: LeaveEvent) {
         {time}
       </span>
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</p>
+        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+          {title}
+        </p>
         <p className="text-xs text-slate-400 dark:text-slate-500">{sub}</p>
       </div>
     </li>
@@ -71,15 +79,15 @@ function NoEvents() {
 export async function RecentLeaveEvents() {
   const home = await getFirstHome();
 
-  const rawEvents = home
-    ? await getRecentStateEventsForDashboard(home.id)
-    : [];
+  const rawEvents = home ? await getRecentStateEventsForDashboard(home.id) : [];
 
   const events: LeaveEvent[] = rawEvents.map((ev) => ({
-    icon:  categoryToIcon(ev.devices.category),
-    time:  formatTime(ev.observed_at),
+    // @ts-expect-error — Supabase types `devices` as an array; runtime is a single object.
+    icon: categoryToIcon(ev.devices.category),
+    time: formatTime(ev.observed_at),
+    // @ts-expect-error — see above.
     title: ev.devices.name,
-    sub:   `State: ${ev.state_value}`,
+    sub: `State: ${ev.state_value}`,
   }));
 
   return (
@@ -91,9 +99,11 @@ export async function RecentLeaveEvents() {
         viewAllHref="#history"
       />
       <ul className="grid gap-4">
-        {events.length > 0
-          ? events.map((ev, i) => <EventRow key={i} {...ev} />)
-          : <NoEvents />}
+        {events.length > 0 ? (
+          events.map((ev, i) => <EventRow key={i} {...ev} />)
+        ) : (
+          <NoEvents />
+        )}
       </ul>
     </CardPanel>
   );

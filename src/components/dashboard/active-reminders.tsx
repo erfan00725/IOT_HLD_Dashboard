@@ -108,8 +108,10 @@ export async function ActiveReminders() {
     : [];
 
   const reminders: ReminderDisplayRow[] = rawRules.map((rule) => ({
+    // @ts-expect-error
     icon: categoryToIcon(rule.devices.category),
     title: rule.reminder_text,
+    // @ts-expect-error
     sub: rule.devices.name,
     time: formatTime(rule.created_at ?? new Date().toISOString()),
     priority: severityToPriority(rule.severity),

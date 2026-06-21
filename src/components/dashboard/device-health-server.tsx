@@ -15,8 +15,8 @@ export async function DeviceHealth() {
   // Default segments when no home / no devices
   const fallback = {
     segments: [
-      { label: "Online",  count: 0, pct: 0,   color: "#0d9488" },
-      { label: "Warning", count: 0, pct: 0,   color: "#f59e0b" },
+      { label: "Online", count: 0, pct: 0, color: "#0d9488" },
+      { label: "Warning", count: 0, pct: 0, color: "#f59e0b" },
       { label: "Offline", count: 0, pct: 100, color: "#ef4444" },
     ],
     total: 0,
@@ -28,6 +28,7 @@ export async function DeviceHealth() {
   const deviceStates = await getDashboardDeviceStates(home.id);
 
   // Only count active devices
+  // @ts-expect-error
   const activeStates = deviceStates.filter((d) => d.devices.active);
   const total = activeStates.length;
 
@@ -36,6 +37,7 @@ export async function DeviceHealth() {
   // Tally by classification
   const counts = { Online: 0, Warning: 0, Offline: 0 };
   for (const d of activeStates) {
+    // @ts-expect-error
     const cls = classifyDevice(d.state_value, d.devices.expected_safe_state);
     counts[cls]++;
   }
@@ -43,9 +45,24 @@ export async function DeviceHealth() {
   const pct = (n: number) => Math.round((n / total) * 100);
 
   const segments = [
-    { label: "Online",  count: counts.Online,  pct: pct(counts.Online),  color: "#0d9488" },
-    { label: "Warning", count: counts.Warning, pct: pct(counts.Warning), color: "#f59e0b" },
-    { label: "Offline", count: counts.Offline, pct: pct(counts.Offline), color: "#ef4444" },
+    {
+      label: "Online",
+      count: counts.Online,
+      pct: pct(counts.Online),
+      color: "#0d9488",
+    },
+    {
+      label: "Warning",
+      count: counts.Warning,
+      pct: pct(counts.Warning),
+      color: "#f59e0b",
+    },
+    {
+      label: "Offline",
+      count: counts.Offline,
+      pct: pct(counts.Offline),
+      color: "#ef4444",
+    },
   ];
 
   return (
