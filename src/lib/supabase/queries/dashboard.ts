@@ -24,8 +24,6 @@ export async function getDashboardDeviceStates(homeId: string) {
     )
     .eq("home_id", homeId);
 
-  console.log(data);
-
   if (error) throw new Error(error.message);
   return data ?? [];
 }
@@ -219,6 +217,65 @@ export async function getDevicesPageData(
       room_code: d.room_code,
       state_value: state?.state_value ?? null,
       last_seen_at: state?.last_seen_at ?? null,
+    };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Events page
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface EventsPageEvent {
+  id: number;
+  device_external_key: string;
+  state_value: string;
+  observed_at: string;
+  device_name: string;
+  device_category: string;
+  room_name: string | null;
+  room_code: string | null;
+}
+
+/**
+ * Returns the most recent device state events for a home (newest first),
+ * joined with the device's name, category and room (via the
+ * `v_device_inventory` view).
+ */
+export async function getEventsPageData(
+  homeId: string,
+  limit = 200,
+): Promise<EventsPageEvent[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("device_state_events")
+    .select(
+      `id, device_external_key, state_value, observed_at, room_id,
+       devices!inner(name, category, rooms!inner(name, code))`,
+    )
+    .eq("home_id", homeId)
+    .order("observed_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+
+  console.log(data[0]);
+
+  return (data ?? []).map((row) => {
+    // The Supabase join is typed as an array but resolves to a single object
+    // at runtime (one device per event). Narrow it defensively.
+    const dev = Array.isArray(row.devices) ? row.devices[0] : row.devices;
+    return {
+      id: row.id,
+      device_external_key: row.device_external_key,
+      state_value: row.state_value,
+      observed_at: row.observed_at,
+      device_name: dev?.name ?? "Unknown device",
+      device_category: dev?.category ?? "utility",
+      // room_name: dev?.rooms[0].name ?? null,
+      // room_code: dev?.rooms[0].code ?? null,
+      room_name: null,
+      room_code: null,
     };
   });
 }

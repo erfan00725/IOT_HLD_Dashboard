@@ -2,6 +2,7 @@ export const ROUT_PATHS = {
   LOGIN: "/login",
   DASHBOARD: "/dashboard",
   DEVICES: "/devices",
+  EVENTS: "/events",
   SIGNUP: "/signup",
 } as const;
 

@@ -29,6 +29,7 @@ import {
   type SystemHealthStatus,
 } from "@/lib/utils/device-health";
 import type { Tables } from "@/lib/types/database.types";
+import { prisma } from "@/lib/prisma";
 
 type Profile = Tables<"profiles">;
 
@@ -120,7 +121,11 @@ function NavItem({
   }
 
   return (
-    <a href={href} className={className} aria-current={active ? "page" : undefined}>
+    <a
+      href={href}
+      className={className}
+      aria-current={active ? "page" : undefined}
+    >
       {iconEl}
       {label}
     </a>
@@ -375,6 +380,12 @@ export async function AppShell({
   } catch {
     profile = null;
   }
+
+  const res = await prisma.device_state_events.findMany({
+    include: { devices: { include: { rooms: true } } },
+  });
+
+  console.log(res[0].devices.active);
 
   const home = await getFirstHome();
   const deviceStates = home ? await getDashboardDeviceStates(home.id) : [];
