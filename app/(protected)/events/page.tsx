@@ -4,7 +4,7 @@ import {
   getEventsPageData,
   getFirstHome,
   type EventsPageEvent,
-} from "@/lib/supabase/queries/dashboard";
+} from "@/lib/prisma/queries/dashboard";
 import { AppShell } from "@/components/layout/app-shell";
 import { EventsSummary } from "@/components/dashboard/events-summary";
 import { EventsTimeline } from "@/components/dashboard/events-timeline";

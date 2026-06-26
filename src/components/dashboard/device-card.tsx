@@ -17,7 +17,7 @@ import {
   toggleDeviceActiveAction,
   toggleDeviceReminderAction,
 } from "@/lib/supabase/actions/devices";
-import type { DevicesPageDevice } from "@/lib/supabase/queries/dashboard";
+import type { DevicesPageDevice } from "@/lib/prisma/queries/dashboard";
 
 // Map a device classification to the tone used for the status badge.
 const CLASS_TO_TONE: Record<"Online" | "Warning" | "Offline", ToneColor> = {

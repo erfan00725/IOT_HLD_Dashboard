@@ -6,6 +6,7 @@ import {
   LockKeyhole,
   ShieldAlert,
   type LucideIcon,
+  Home,
 } from "lucide-react";
 import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
@@ -14,7 +15,7 @@ import { ICON_BUBBLE_STYLES } from "@/lib/utils/tone-styles";
 import {
   getRecentStateEventsForDashboard,
   getFirstHome,
-} from "@/lib/supabase/queries/dashboard";
+} from "@/lib/prisma/queries/dashboard";
 import { formatTime } from "@/lib/utils/dashboard-mappers";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -22,13 +23,13 @@ import { formatTime } from "@/lib/utils/dashboard-mappers";
 interface LeaveEvent {
   icon: LucideIcon;
   time: string;
-  title: string;
+  title?: string;
   sub: string;
 }
 
 // ─── Category → icon ─────────────────────────────────────────────────────────
 
-function categoryToIcon(category: string): LucideIcon {
+function categoryToIcon(category?: string): LucideIcon {
   switch (category) {
     case "presence":
       return PersonStanding;
@@ -82,11 +83,11 @@ export async function RecentLeaveEvents() {
   const rawEvents = home ? await getRecentStateEventsForDashboard(home.id) : [];
 
   const events: LeaveEvent[] = rawEvents.map((ev) => ({
-    // @ts-expect-error — Supabase types `devices` as an array; runtime is a single object.
-    icon: categoryToIcon(ev.devices.category),
+    // Supabase types `devices` as an array; runtime is a single object.
+    icon: categoryToIcon(ev.devices?.category),
     time: formatTime(ev.observed_at),
-    // @ts-expect-error — see above.
-    title: ev.devices.name,
+    // see above.
+    title: ev.devices?.name || "_",
     sub: `State: ${ev.state_value}`,
   }));
 

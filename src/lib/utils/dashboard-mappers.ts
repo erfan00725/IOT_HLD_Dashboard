@@ -5,9 +5,6 @@
 
 import type { Priority, ToneColor } from "@/lib/utils/tone-styles";
 import type { AutomationRule } from "@/components/dashboard/automation-rules";
-import { Database } from "../types/database.types";
-import { getAllRulesForAutomationTable } from "../supabase/queries/dashboard";
-import { ArrayElement } from "./type-utils";
 import { RulesAutomationType } from "../types/customeTypes";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -112,8 +109,8 @@ export function mapRuleToAutomation(row: RulesAutomationType): AutomationRule {
   return {
     id: row.id,
     name: row.reminder_text,
-    icon: categoryToIcon(row.devices.category || undefined),
-    iconColor: categoryToTone(row.devices.category || undefined),
+    icon: categoryToIcon(row.devices?.category || undefined),
+    iconColor: categoryToTone(row.devices?.category || undefined),
     trigger: `Presence: ${row.trigger_presence_state}`,
     condition: `Device state = ${row.trigger_device_state}`,
     action: row.reminder_text,

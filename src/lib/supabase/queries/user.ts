@@ -4,7 +4,7 @@
  * `supabase.auth.getUser()` for the currently authenticated user.
  */
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { Database } from "@/lib/types/database.types";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
@@ -31,15 +31,7 @@ export async function getUserById(id: string) {
 
 /** Returns the currently authenticated user from the session cookie. */
 export async function getMyUser() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error) throw new Error(error.message);
-  return user;
+  return getCurrentUser();
 }
 
 // ─── Create ─────────────────────────────────────────────────────────────────────────────

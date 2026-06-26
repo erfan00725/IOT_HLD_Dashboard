@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { toggleReminderRule } from "@/lib/supabase/queries/reminder_rules";
+import { toggleReminderRule } from "@/lib/prisma/queries/reminder_rules";
 
 /**
  * Toggles the `active` flag of a reminder rule (as shown in the Automation

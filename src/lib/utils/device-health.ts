@@ -5,7 +5,6 @@
  * server components (DeviceHealth chart, AppShell SystemStatus) and tests.
  */
 
-import { getDashboardDeviceStates } from "../supabase/queries/dashboard";
 import { DashboardDeviceStateType } from "../types/customeTypes";
 import { Database } from "../types/database.types";
 
@@ -23,7 +22,7 @@ export type DeviceClass = "Online" | "Warning" | "Offline";
 /** A device is considered online when its state matches expected_safe_state. */
 export function classifyDevice(
   stateValue: Database["public"]["Enums"]["device_status"],
-  expectedSafeState: string,
+  expectedSafeState?: string,
 ): DeviceClass {
   const v = stateValue?.toLowerCase() ?? "";
   // If state matches the expected safe state → online
@@ -60,13 +59,13 @@ const EMPTY_SUMMARY: DeviceHealthSummary = {
 export function summarizeDeviceHealth(
   states: DashboardDeviceStateType[],
 ): DeviceHealthSummary {
-  const active = states.filter((s) => s.devices.active);
+  const active = states.filter((s) => s.devices?.active);
   const total = active.length;
   if (total === 0) return EMPTY_SUMMARY;
 
   const counts = { Online: 0, Warning: 0, Offline: 0 };
   for (const s of active) {
-    counts[classifyDevice(s.state_value, s.devices.expected_safe_state)]++;
+    counts[classifyDevice(s.state_value, s.devices?.expected_safe_state)]++;
   }
 
   let status: SystemHealthStatus = "secure";

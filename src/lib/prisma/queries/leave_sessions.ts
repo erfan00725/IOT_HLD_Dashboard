@@ -2,72 +2,42 @@
  * Server-side CRUD actions for the `leave_sessions` table.
  */
 
-import { createClient } from "@/lib/supabase/server";
-import { TablesInsert, TablesUpdate } from "@/lib/types/database.types";
+import { prisma } from "@/lib/prisma";
+import { InputJsonValue } from "@prisma/client/runtime/client";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
 /** Fetch all leave sessions for a home, newest first. */
 export async function getLeaveSessionsByHomeId(homeId: string) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("leave_sessions")
-    .select("*")
-    .eq("home_id", homeId)
-    .order("started_at", { ascending: false });
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.leave_sessions.findMany({
+    where: { home_id: homeId },
+    orderBy: { started_at: "desc" },
+  });
 }
 
 /** Fetch the current open leave session (no ended_at) for a home, or null. */
 export async function getActiveLeaveSession(homeId: string) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("leave_sessions")
-    .select("*")
-    .eq("home_id", homeId)
-    .is("ended_at", null)
-    .order("started_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.leave_sessions.findFirst({
+    where: { home_id: homeId, ended_at: null },
+    orderBy: { started_at: "desc" },
+  });
 }
 
 /** Fetch a single leave session by UUID. */
 export async function getLeaveSessionById(id: string) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("leave_sessions")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.leave_sessions.findUniqueOrThrow({ where: { id } });
 }
 
 // ─── Create ─────────────────────────────────────────────────────────────────────────────
 
 /** Start a new leave session. */
-export async function createLeaveSession(
-  payload: TablesInsert<"leave_sessions">,
-) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("leave_sessions")
-    .insert(payload)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+export async function createLeaveSession(payload: {
+  home_id: string;
+  user_id: string;
+  ended_at?: Date | null;
+  metadata?: unknown;
+}) {
+  return prisma.leave_sessions.create({ data: payload as never });
 }
 
 // ─── Update ─────────────────────────────────────────────────────────────────────────────
@@ -75,33 +45,22 @@ export async function createLeaveSession(
 /** Update a leave session by UUID. */
 export async function updateLeaveSession(
   id: string,
-  payload: TablesUpdate<"leave_sessions">,
+  payload: {
+    ended_at?: Date | null;
+    metadata?: InputJsonValue;
+  },
 ) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("leave_sessions")
-    .update(payload)
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.leave_sessions.update({ where: { id }, data: payload });
 }
 
 /** Convenience: close an open leave session by setting ended_at to now. */
 export async function endLeaveSession(id: string) {
-  return updateLeaveSession(id, { ended_at: new Date().toISOString() });
+  return updateLeaveSession(id, { ended_at: new Date() });
 }
 
 // ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
 /** Delete a leave session by UUID. */
 export async function deleteLeaveSession(id: string) {
-  const supabase = await createClient();
-
-  const { error } = await supabase.from("leave_sessions").delete().eq("id", id);
-
-  if (error) throw new Error(error.message);
+  await prisma.leave_sessions.delete({ where: { id } });
 }

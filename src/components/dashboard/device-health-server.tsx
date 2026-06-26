@@ -6,7 +6,7 @@ import { DeviceHealthChart } from "./device-health";
 import {
   getDashboardDeviceStates,
   getFirstHome,
-} from "@/lib/supabase/queries/dashboard";
+} from "@/lib/prisma/queries/dashboard";
 import { classifyDevice } from "@/lib/utils/device-health";
 
 export async function DeviceHealth() {
@@ -28,8 +28,7 @@ export async function DeviceHealth() {
   const deviceStates = await getDashboardDeviceStates(home.id);
 
   // Only count active devices
-  // @ts-expect-error
-  const activeStates = deviceStates.filter((d) => d.devices.active);
+  const activeStates = deviceStates.filter((d) => d.devices?.active);
   const total = activeStates.length;
 
   if (total === 0) return <DeviceHealthChart {...fallback} />;
@@ -37,8 +36,7 @@ export async function DeviceHealth() {
   // Tally by classification
   const counts = { Online: 0, Warning: 0, Offline: 0 };
   for (const d of activeStates) {
-    // @ts-expect-error
-    const cls = classifyDevice(d.state_value, d.devices.expected_safe_state);
+    const cls = classifyDevice(d.state_value, d.devices?.expected_safe_state);
     counts[cls]++;
   }
 

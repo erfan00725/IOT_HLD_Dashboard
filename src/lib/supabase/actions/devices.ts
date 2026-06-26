@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { toggleDeviceActive, toggleDeviceReminder } from "@/lib/supabase/queries/devices";
+import { toggleDeviceActive, toggleDeviceReminder } from "@/lib/prisma/queries/devices";
 
 /**
  * Toggles a device's `active` flag and revalidates the devices page.

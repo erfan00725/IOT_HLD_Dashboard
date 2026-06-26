@@ -15,7 +15,7 @@ import {
   getDashboardDeviceStates,
   getActiveLeaveSessionForDashboard,
   getFirstHome,
-} from "@/lib/supabase/queries/dashboard";
+} from "@/lib/prisma/queries/dashboard";
 import { formatTime } from "@/lib/utils/dashboard-mappers";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -87,10 +87,8 @@ export async function HomeStatusSection() {
       ];
     }
 
-    const [deviceStates, activeSession] = await Promise.all([
-      getDashboardDeviceStates(home.id),
-      getActiveLeaveSessionForDashboard(home.id),
-    ]);
+    const deviceStates = await getDashboardDeviceStates(home.id);
+    const activeSession = await getActiveLeaveSessionForDashboard(home.id);
 
     // ── Presence tile ──────────────────────────────────────────────────────
     const presenceTile: StatusTileData = activeSession
@@ -109,15 +107,13 @@ export async function HomeStatusSection() {
 
     // ── Helpers ────────────────────────────────────────────────────────────
     const findByCategory = (cat: string) =>
-      // @ts-expect-error
-      deviceStates.find((d) => d.devices.category === cat);
+      deviceStates.find((d) => d.devices?.category === cat);
 
     const stateOf = (cat: string) => findByCategory(cat)?.state_value ?? null;
 
     // ── Lighting tile ──────────────────────────────────────────────────────
     const lightingStates = deviceStates.filter(
-      // @ts-expect-error
-      (d) => d.devices.category === "lighting",
+      (d) => d.devices?.category === "lighting",
     );
     const lightsOnCount = lightingStates.filter(
       (d) => d.state_value.toLowerCase() !== "off",

@@ -19,7 +19,7 @@ import {
   eventStateToTone,
   groupByDay,
 } from "@/lib/utils/events";
-import type { EventsPageEvent } from "@/lib/supabase/queries/dashboard";
+import type { EventsPageEvent } from "@/lib/prisma/queries/dashboard";
 
 interface EventsTimelineProps {
   events: EventsPageEvent[];

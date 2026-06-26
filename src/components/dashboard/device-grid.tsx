@@ -5,7 +5,7 @@ import { Cpu } from "lucide-react";
 import { DeviceCard } from "./device-card";
 import { DevicesFilters } from "./devices-filters";
 import { deviceCategoryLabel } from "@/lib/utils/device-icons";
-import type { DevicesPageDevice } from "@/lib/supabase/queries/dashboard";
+import type { DevicesPageDevice } from "@/lib/prisma/queries/dashboard";
 import type { FilterTabOption } from "@/components/ui";
 
 interface DeviceGridProps {

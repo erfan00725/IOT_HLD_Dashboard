@@ -4,7 +4,7 @@ import {
   getDevicesPageData,
   getFirstHome,
   type DevicesPageDevice,
-} from "@/lib/supabase/queries/dashboard";
+} from "@/lib/prisma/queries/dashboard";
 import { AppShell } from "@/components/layout/app-shell";
 import { DevicesSummary } from "@/components/dashboard/devices-summary";
 import { DeviceGrid } from "@/components/dashboard/device-grid";

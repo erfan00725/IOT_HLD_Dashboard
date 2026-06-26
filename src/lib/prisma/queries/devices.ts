@@ -2,104 +2,64 @@
  * Server-side CRUD actions for the `devices` table.
  */
 
-import { createClient } from "@/lib/supabase/server";
-import {
-  Database,
-  TablesInsert,
-  TablesUpdate,
-} from "@/lib/types/database.types";
-
-type DeviceCategory = Database["public"]["Enums"]["device_category"];
+import { prisma } from "@/lib/prisma";
+import type { device_category, device_status } from "@/generated/prisma/client";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
 /** Fetch all devices for a given home. */
 export async function getDevicesByHomeId(homeId: string) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("devices")
-    .select("*")
-    .eq("home_id", homeId)
-    .order("name", { ascending: true });
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.devices.findMany({
+    where: { home_id: homeId },
+    orderBy: { name: "asc" },
+  });
 }
 
 /** Fetch devices belonging to a specific room. */
 export async function getDevicesByRoomId(roomId: string) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("devices")
-    .select("*")
-    .eq("room_id", roomId)
-    .order("name", { ascending: true });
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.devices.findMany({
+    where: { room_id: roomId },
+    orderBy: { name: "asc" },
+  });
 }
 
 /** Fetch all devices of a given category in a home. */
 export async function getDevicesByCategory(
   homeId: string,
-  category: DeviceCategory,
+  category: device_category,
 ) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("devices")
-    .select("*")
-    .eq("home_id", homeId)
-    .eq("category", category);
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.devices.findMany({
+    where: { home_id: homeId, category },
+  });
 }
 
 /** Fetch a single device by its UUID. */
 export async function getDeviceById(id: string) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("devices")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.devices.findUniqueOrThrow({ where: { id } });
 }
 
 /** Fetch a single device by its external MQTT key. */
 export async function getDeviceByExternalKey(externalKey: string) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("devices")
-    .select("*")
-    .eq("external_key", externalKey)
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.devices.findUniqueOrThrow({
+    where: { external_key: externalKey },
+  });
 }
 
 // ─── Create ─────────────────────────────────────────────────────────────────────────────
 
 /** Insert a new device. */
-export async function createDevice(payload: TablesInsert<"devices">) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("devices")
-    .insert(payload)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+export async function createDevice(payload: {
+  home_id: string;
+  room_id?: string | null;
+  external_key: string;
+  name: string;
+  category: device_category;
+  expected_safe_state?: device_status;
+  reminder_enabled?: boolean;
+  active?: boolean;
+  metadata?: unknown;
+}) {
+  return prisma.devices.create({ data: payload as never });
 }
 
 // ─── Update ─────────────────────────────────────────────────────────────────────────────
@@ -107,19 +67,19 @@ export async function createDevice(payload: TablesInsert<"devices">) {
 /** Update a device by its UUID. */
 export async function updateDevice(
   id: string,
-  payload: TablesUpdate<"devices">,
+  payload: {
+    home_id?: string;
+    room_id?: string | null;
+    external_key?: string;
+    name?: string;
+    category?: device_category;
+    expected_safe_state?: device_status;
+    reminder_enabled?: boolean;
+    active?: boolean;
+    metadata?: unknown;
+  },
 ) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("devices")
-    .update(payload)
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.devices.update({ where: { id }, data: payload as never });
 }
 
 /** Toggle the `active` field of a device. */
@@ -139,9 +99,5 @@ export async function toggleDeviceReminder(
 
 /** Delete a device by its UUID. */
 export async function deleteDevice(id: string) {
-  const supabase = await createClient();
-
-  const { error } = await supabase.from("devices").delete().eq("id", id);
-
-  if (error) throw new Error(error.message);
+  await prisma.devices.delete({ where: { id } });
 }

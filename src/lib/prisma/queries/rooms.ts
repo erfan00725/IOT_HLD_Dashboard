@@ -2,79 +2,55 @@
  * Server-side CRUD actions for the `rooms` table.
  */
 
-import { createClient } from "@/lib/supabase/server";
-import { TablesInsert, TablesUpdate } from "@/lib/types/database.types";
+import { prisma } from "@/lib/prisma";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
 /** Fetch all rooms for a given home, sorted by sort_order. */
 export async function getRoomsByHomeId(homeId: string) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("rooms")
-    .select("*")
-    .eq("home_id", homeId)
-    .order("sort_order", { ascending: true });
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.rooms.findMany({
+    where: { home_id: homeId },
+    orderBy: { sort_order: "asc" },
+  });
 }
 
 /** Fetch a single room by UUID. */
 export async function getRoomById(id: string) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("rooms")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+  return prisma.rooms.findUniqueOrThrow({ where: { id } });
 }
 
 // ─── Create ─────────────────────────────────────────────────────────────────────────────
 
 /** Insert a new room. */
-export async function createRoom(payload: TablesInsert<"rooms">) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("rooms")
-    .insert(payload)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+export async function createRoom(payload: {
+  home_id: string;
+  name: string;
+  code: string;
+  floor_label?: string | null;
+  sort_order?: number;
+}) {
+  return prisma.rooms.create({ data: payload });
 }
 
 // ─── Update ─────────────────────────────────────────────────────────────────────────────
 
 /** Update a room by UUID. */
-export async function updateRoom(id: string, payload: TablesUpdate<"rooms">) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("rooms")
-    .update(payload)
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+export async function updateRoom(
+  id: string,
+  payload: {
+    home_id?: string;
+    name?: string;
+    code?: string;
+    floor_label?: string | null;
+    sort_order?: number;
+  },
+) {
+  return prisma.rooms.update({ where: { id }, data: payload });
 }
 
 // ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
 /** Delete a room by UUID. */
 export async function deleteRoom(id: string) {
-  const supabase = await createClient();
-
-  const { error } = await supabase.from("rooms").delete().eq("id", id);
-
-  if (error) throw new Error(error.message);
+  await prisma.rooms.delete({ where: { id } });
 }

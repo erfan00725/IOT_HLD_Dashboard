@@ -18,20 +18,19 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { sidebarItems } from "@/data/mock";
 import { DarkModeToggle } from "@/components/layout/dark-mode-toggle";
-import { getMyProfile } from "@/lib/supabase/queries/profiles";
+import { getMyProfile } from "@/lib/prisma/queries/profiles";
 import {
   getDashboardDeviceStates,
   getFirstHome,
-} from "@/lib/supabase/queries/dashboard";
+} from "@/lib/prisma/queries/dashboard";
 import {
   summarizeDeviceHealth,
   type DeviceHealthSummary,
   type SystemHealthStatus,
 } from "@/lib/utils/device-health";
 import type { Tables } from "@/lib/types/database.types";
-import { prisma } from "@/lib/prisma";
 
-type Profile = Tables<"profiles">;
+type Profile = Awaited<ReturnType<typeof getMyProfile>>;
 
 // ---------------------------------------------------------------------------
 // Icon registry — maps string names from mock data to Lucide components
@@ -374,22 +373,15 @@ export async function AppShell({
 }: AppShellProps) {
   // Profile lookup may fail for an authenticated user that has no profile row
   // yet — fall back to a guest identity rather than crashing the whole shell.
-  let profile: Profile | null = null;
+  let profile: Awaited<ReturnType<typeof getMyProfile>> | null = null;
   try {
     profile = await getMyProfile();
   } catch {
     profile = null;
   }
 
-  const res = await prisma.device_state_events.findMany({
-    include: { devices: { include: { rooms: true } } },
-  });
-
-  console.log(res[0].devices.active);
-
   const home = await getFirstHome();
   const deviceStates = home ? await getDashboardDeviceStates(home.id) : [];
-  // @ts-expect-error
   const summary = summarizeDeviceHealth(deviceStates);
 
   // Read the current pathname (set by the proxy middleware) so the sidebar

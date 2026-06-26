@@ -1,9 +1,10 @@
 /**
  * Dashboard-specific query helpers.
- * All functions are server-only — they rely on `createClient` from server.ts.
+ * All functions are server-only — they rely on the Prisma client.
  */
 
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUserOrThrow } from "@/lib/supabase/server";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Home Status Section
@@ -11,40 +12,46 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Returns the latest state for every device in a home.
- * Joined with the `devices` table so the caller has name + category.
+ * Mapped to match the shape consumers expect: `{ device_external_key, state_value,
+ * last_seen_at, devices: { name, category, expected_safe_state, active } }[]`
  */
 export async function getDashboardDeviceStates(homeId: string) {
-  const supabase = await createClient();
+  const rows = await prisma.device_latest_states.findMany({
+    where: { home_id: homeId },
+    include: { devices: true },
+  });
 
-  const { data, error } = await supabase
-    .from("device_latest_states")
-    .select(
-      `device_external_key, state_value, last_seen_at,
-       devices!inner(name, category, expected_safe_state, active)`,
-    )
-    .eq("home_id", homeId);
-
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  return rows.map((row) => ({
+    device_external_key: row.device_external_key,
+    state_value: row.state_value,
+    last_seen_at: row.last_seen_at.toISOString(),
+    devices: row.devices
+      ? {
+          name: row.devices.name,
+          category: row.devices.category as string,
+          expected_safe_state: row.devices.expected_safe_state as string,
+          active: row.devices.active,
+        }
+      : null,
+  }));
 }
 
 /**
  * Returns the most recent active (open) leave session for a home, or null.
  */
 export async function getActiveLeaveSessionForDashboard(homeId: string) {
-  const supabase = await createClient();
+  const session = await prisma.leave_sessions.findFirst({
+    where: { home_id: homeId, ended_at: null },
+    orderBy: { started_at: "desc" },
+  });
 
-  const { data, error } = await supabase
-    .from("leave_sessions")
-    .select("id, started_at, ended_at")
-    .eq("home_id", homeId)
-    .is("ended_at", null)
-    .order("started_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  if (!session) return null;
 
-  if (error) throw new Error(error.message);
-  return data;
+  return {
+    id: session.id,
+    started_at: session.started_at.toISOString(),
+    ended_at: session.ended_at?.toISOString() ?? null,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -53,23 +60,30 @@ export async function getActiveLeaveSessionForDashboard(homeId: string) {
 
 /**
  * Returns all active reminder rules for a home, ordered by severity desc.
+ * Mapped to match: `{ id, reminder_text, severity, device_external_key,
+ *   devices: { name, category }, created_at }[]`
  */
 export async function getActiveReminderRulesForDashboard(homeId: string) {
-  const supabase = await createClient();
+  const rules = await prisma.reminder_rules.findMany({
+    where: { home_id: homeId, active: true },
+    orderBy: { severity: "desc" },
+    take: 5,
+    include: { devices: true },
+  });
 
-  const { data, error } = await supabase
-    .from("reminder_rules")
-    .select(
-      `id, reminder_text, severity, device_external_key,
-       devices!inner(name, category), created_at`,
-    )
-    .eq("home_id", homeId)
-    .eq("active", true)
-    .order("severity", { ascending: false })
-    .limit(5);
-
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  return rules.map((rule) => ({
+    id: rule.id,
+    reminder_text: rule.reminder_text,
+    severity: rule.severity,
+    device_external_key: rule.device_external_key,
+    devices: rule.devices
+      ? {
+          name: rule.devices.name,
+          category: rule.devices.category as string,
+        }
+      : null,
+    created_at: rule.created_at.toISOString(),
+  }));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,23 +92,29 @@ export async function getActiveReminderRulesForDashboard(homeId: string) {
 
 /**
  * Returns the 5 most recent device state events for a home.
- * Joined with `devices` for a human-readable name.
+ * Mapped to match: `{ id, device_external_key, state_value, observed_at,
+ *   devices: { name, category } }[]`
  */
 export async function getRecentStateEventsForDashboard(homeId: string) {
-  const supabase = await createClient();
+  const events = await prisma.device_state_events.findMany({
+    where: { home_id: homeId },
+    orderBy: { observed_at: "desc" },
+    take: 5,
+    include: { devices: true },
+  });
 
-  const { data, error } = await supabase
-    .from("device_state_events")
-    .select(
-      `id, device_external_key, state_value, observed_at,
-       devices!inner(name, category)`,
-    )
-    .eq("home_id", homeId)
-    .order("observed_at", { ascending: false })
-    .limit(5);
-
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  return events.map((ev) => ({
+    id: Number(ev.id),
+    device_external_key: ev.device_external_key,
+    state_value: ev.state_value,
+    observed_at: ev.observed_at.toISOString(),
+    devices: ev.devices
+      ? {
+          name: ev.devices.name,
+          category: ev.devices.category as string,
+        }
+      : null,
+  }));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,23 +124,32 @@ export async function getRecentStateEventsForDashboard(homeId: string) {
 /**
  * Returns all reminder rules for the automation rules table.
  * Includes device info for icon/colour resolution.
+ * Mapped to match: `{ id, reminder_text, severity, active, trigger_presence_state,
+ *   trigger_device_state, device_external_key,
+ *   devices: { name, category } }[]`
  */
 export async function getAllRulesForAutomationTable(homeId: string) {
-  const supabase = await createClient();
+  const rules = await prisma.reminder_rules.findMany({
+    where: { home_id: homeId },
+    orderBy: { severity: "desc" },
+    include: { devices: true },
+  });
 
-  const { data, error } = await supabase
-    .from("reminder_rules")
-    .select(
-      `id, reminder_text, severity, active,
-       trigger_presence_state, trigger_device_state,
-       device_external_key,
-       devices!inner(name, category)`,
-    )
-    .eq("home_id", homeId)
-    .order("severity", { ascending: false });
-
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  return rules.map((rule) => ({
+    id: rule.id,
+    reminder_text: rule.reminder_text,
+    severity: rule.severity,
+    active: rule.active,
+    trigger_presence_state: rule.trigger_presence_state,
+    trigger_device_state: rule.trigger_device_state,
+    device_external_key: rule.device_external_key,
+    devices: rule.devices
+      ? {
+          name: rule.devices.name,
+          category: rule.devices.category as string,
+        }
+      : null,
+  }));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -129,24 +158,20 @@ export async function getAllRulesForAutomationTable(homeId: string) {
 
 /** Returns the first home for the current authenticated user. */
 export async function getFirstHome() {
-  const supabase = await createClient();
+  const user = await getCurrentUserOrThrow();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const home = await prisma.homes.findFirst({
+    where: { owner_id: user.id },
+    orderBy: { created_at: "asc" },
+  });
 
-  if (!user) return null;
+  if (!home) return null;
 
-  const { data, error } = await supabase
-    .from("homes")
-    .select("id, name, slug")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  return data;
+  return {
+    id: home.id,
+    name: home.name,
+    slug: home.slug,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -169,54 +194,39 @@ export interface DevicesPageDevice {
 }
 
 /**
- * Returns every device in a home joined with its room (via the
- * `v_device_inventory` view) and its latest reported state.
- * Ordered by category, then name.
+ * Returns every device in a home joined with its room and its latest reported
+ * state. Ordered by category, then name.
+ * Replaces the `v_device_inventory` view + separate state fetch with Prisma joins.
  */
 export async function getDevicesPageData(
   homeId: string,
 ): Promise<DevicesPageDevice[]> {
-  const supabase = await createClient();
+  const devices = await prisma.devices.findMany({
+    where: { home_id: homeId },
+    include: {
+      rooms: true,
+      device_latest_states: true,
+    },
+    orderBy: [{ category: "asc" }, { name: "asc" }],
+  });
 
-  const { data: inventory, error: invError } = await supabase
-    .from("v_device_inventory")
-    .select(
-      "id, external_key, device_name, device_category, active, reminder_enabled, expected_safe_state, metadata, room_name, room_code",
-    )
-    .eq("home_id", homeId)
-    .order("device_category", { ascending: true })
-    .order("device_name", { ascending: true });
+  if (devices.length === 0) return [];
 
-  if (invError) throw new Error(invError.message);
-  if (!inventory || inventory.length === 0) return [];
-
-  // Fetch latest states for all devices in one round-trip.
-  const { data: states, error: stError } = await supabase
-    .from("device_latest_states")
-    .select("device_external_key, state_value, last_seen_at")
-    .eq("home_id", homeId);
-
-  if (stError) throw new Error(stError.message);
-
-  const stateByKey = new Map(
-    (states ?? []).map((s) => [s.device_external_key, s]),
-  );
-
-  return inventory.map((d) => {
-    const state = stateByKey.get(d.external_key);
+  return devices.map((d) => {
+    const state = d.device_latest_states;
     return {
-      id: d.id ?? "",
-      external_key: d.external_key ?? "",
-      name: d.device_name ?? "Unnamed device",
-      category: d.device_category ?? "utility",
-      active: d.active ?? false,
-      reminder_enabled: d.reminder_enabled ?? false,
-      expected_safe_state: d.expected_safe_state ?? "",
+      id: d.id,
+      external_key: d.external_key,
+      name: d.name,
+      category: d.category as string,
+      active: d.active,
+      reminder_enabled: d.reminder_enabled,
+      expected_safe_state: d.expected_safe_state as string,
       metadata: d.metadata as Record<string, unknown> | null,
-      room_name: d.room_name,
-      room_code: d.room_code,
+      room_name: d.rooms?.name ?? null,
+      room_code: d.rooms?.code ?? null,
       state_value: state?.state_value ?? null,
-      last_seen_at: state?.last_seen_at ?? null,
+      last_seen_at: state?.last_seen_at?.toISOString() ?? null,
     };
   });
 }
@@ -238,44 +248,29 @@ export interface EventsPageEvent {
 
 /**
  * Returns the most recent device state events for a home (newest first),
- * joined with the device's name, category and room (via the
- * `v_device_inventory` view).
+ * joined with the device's name, category and room.
  */
 export async function getEventsPageData(
   homeId: string,
   limit = 200,
 ): Promise<EventsPageEvent[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("device_state_events")
-    .select(
-      `id, device_external_key, state_value, observed_at, room_id,
-       devices!inner(name, category, rooms!inner(name, code))`,
-    )
-    .eq("home_id", homeId)
-    .order("observed_at", { ascending: false })
-    .limit(limit);
-
-  if (error) throw new Error(error.message);
-
-  console.log(data[0]);
-
-  return (data ?? []).map((row) => {
-    // The Supabase join is typed as an array but resolves to a single object
-    // at runtime (one device per event). Narrow it defensively.
-    const dev = Array.isArray(row.devices) ? row.devices[0] : row.devices;
-    return {
-      id: row.id,
-      device_external_key: row.device_external_key,
-      state_value: row.state_value,
-      observed_at: row.observed_at,
-      device_name: dev?.name ?? "Unknown device",
-      device_category: dev?.category ?? "utility",
-      // room_name: dev?.rooms[0].name ?? null,
-      // room_code: dev?.rooms[0].code ?? null,
-      room_name: null,
-      room_code: null,
-    };
+  const events = await prisma.device_state_events.findMany({
+    where: { home_id: homeId },
+    orderBy: { observed_at: "desc" },
+    take: limit,
+    include: {
+      devices: { include: { rooms: true } },
+    },
   });
+
+  return events.map((row) => ({
+    id: Number(row.id),
+    device_external_key: row.device_external_key,
+    state_value: row.state_value,
+    observed_at: row.observed_at.toISOString(),
+    device_name: row.devices?.name ?? "Unknown device",
+    device_category: (row.devices?.category as string) ?? "utility",
+    room_name: row.devices?.rooms?.name ?? null,
+    room_code: row.devices?.rooms?.code ?? null,
+  }));
 }

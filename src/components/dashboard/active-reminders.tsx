@@ -17,7 +17,7 @@ import {
 import {
   getActiveReminderRulesForDashboard,
   getFirstHome,
-} from "@/lib/supabase/queries/dashboard";
+} from "@/lib/prisma/queries/dashboard";
 import {
   severityToPriority,
   categoryToTone,
@@ -36,7 +36,7 @@ interface ReminderDisplayRow {
 
 // ─── Category → icon ─────────────────────────────────────────────────────────
 
-function categoryToIcon(category: string): LucideIcon {
+function categoryToIcon(category?: string): LucideIcon {
   switch (category) {
     case "lighting":
       return Lightbulb;
@@ -108,11 +108,9 @@ export async function ActiveReminders() {
     : [];
 
   const reminders: ReminderDisplayRow[] = rawRules.map((rule) => ({
-    // @ts-expect-error
-    icon: categoryToIcon(rule.devices.category),
+    icon: categoryToIcon(rule.devices?.category),
     title: rule.reminder_text,
-    // @ts-expect-error
-    sub: rule.devices.name,
+    sub: rule.devices?.name || "_",
     time: formatTime(rule.created_at ?? new Date().toISOString()),
     priority: severityToPriority(rule.severity),
   }));

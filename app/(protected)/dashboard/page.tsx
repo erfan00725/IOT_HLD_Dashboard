@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getAllRulesForAutomationTable,
   getFirstHome,
-} from "@/lib/supabase/queries/dashboard";
+} from "@/lib/prisma/queries/dashboard";
 import { mapRuleToAutomation } from "@/lib/utils/dashboard-mappers";
 import { AppShell } from "@/components/layout/app-shell";
 import { HomeStatusSection } from "@/components/dashboard/home-status-section";
@@ -28,13 +28,9 @@ export default async function DashboardPage() {
     redirect(ROUT_PATHS.LOGIN);
   }
 
-  // const { claims } = claimsData;
-  // console.log(claims);
-
   // Fetch automation rules data at the page level (server-side)
   const home = await getFirstHome();
   const rawRules = home ? await getAllRulesForAutomationTable(home.id) : [];
-  // @ts-expect-error
   const automationRules = rawRules.map(mapRuleToAutomation);
 
   return (
