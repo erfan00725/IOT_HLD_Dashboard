@@ -5,6 +5,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserOrThrow } from "@/lib/supabase/server";
+import { nextCache } from "@/lib/utils/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Home Status Section
@@ -96,25 +97,33 @@ export async function getActiveReminderRulesForDashboard(homeId: string) {
  *   devices: { name, category } }[]`
  */
 export async function getRecentStateEventsForDashboard(homeId: string) {
-  const events = await prisma.device_state_events.findMany({
-    where: { home_id: homeId },
-    orderBy: { observed_at: "desc" },
-    take: 5,
-    include: { devices: true },
-  });
+  const events = await nextCache(
+    async () => {
+      const events = await prisma.device_state_events.findMany({
+        where: { home_id: homeId },
+        orderBy: { observed_at: "desc" },
+        take: 5,
+        include: { devices: true },
+      });
 
-  return events.map((ev) => ({
-    id: Number(ev.id),
-    device_external_key: ev.device_external_key,
-    state_value: ev.state_value,
-    observed_at: ev.observed_at.toISOString(),
-    devices: ev.devices
-      ? {
-          name: ev.devices.name,
-          category: ev.devices.category as string,
-        }
-      : null,
-  }));
+      return events.map((ev) => ({
+        id: Number(ev.id),
+        device_external_key: ev.device_external_key,
+        state_value: ev.state_value,
+        observed_at: ev.observed_at.toISOString(),
+        devices: ev.devices
+          ? {
+              name: ev.devices.name,
+              category: ev.devices.category as string,
+            }
+          : null,
+      }));
+    },
+    homeId,
+    60,
+  );
+
+  return events;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,6 +162,56 @@ export async function getAllRulesForAutomationTable(homeId: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Reminders page
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface RemindersPageRule {
+  id: string;
+  reminder_text: string;
+  severity: number;
+  active: boolean;
+  trigger_presence_state: string | null;
+  trigger_device_state: string;
+  device_external_key: string;
+  devices: { name: string; category: string } | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Returns every reminder rule for a home, joined with the linked device.
+ * Ordered by severity desc, then created_at desc.
+ * Used by the full /reminders page.
+ */
+export async function getRemindersPageData(
+  homeId: string,
+): Promise<RemindersPageRule[]> {
+  const rules = await prisma.reminder_rules.findMany({
+    where: { home_id: homeId },
+    orderBy: [{ severity: "desc" }, { created_at: "desc" }],
+    include: { devices: true },
+  });
+
+  return rules.map((rule) => ({
+    id: rule.id,
+    reminder_text: rule.reminder_text,
+    severity: rule.severity,
+    active: rule.active,
+    trigger_presence_state: rule.trigger_presence_state,
+    trigger_device_state: rule.trigger_device_state,
+    device_external_key: rule.device_external_key,
+    devices: rule.devices
+      ? {
+          name: rule.devices.name,
+          category: rule.devices.category as string,
+        }
+      : null,
+    created_at: rule.created_at.toISOString(),
+    updated_at: rule.updated_at.toISOString(),
+  }));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // First home helper  (used as a fallback until multi-home routing is wired)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -160,10 +219,15 @@ export async function getAllRulesForAutomationTable(homeId: string) {
 export async function getFirstHome() {
   const user = await getCurrentUserOrThrow();
 
-  const home = await prisma.homes.findFirst({
-    where: { owner_id: user.id },
-    orderBy: { created_at: "asc" },
-  });
+  const home = await nextCache(
+    async () =>
+      prisma.homes.findFirst({
+        where: { owner_id: user.id },
+        orderBy: { created_at: "asc" },
+      }),
+    user.id,
+    20,
+  );
 
   if (!home) return null;
 

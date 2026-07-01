@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  node-red:
+    image: nodered/node-red:latest
+    container_name: iot-hld-node-red
+    restart: unless-stopped
+
+    ports:
+      - "1880:1880" # Node-RED editor/UI
+      - "1883:1883" # MQTT TCP for device/client connections
+      - "8883:8883" # MQTT over WebSocket for browser/Next.js
+
+    environment:
+      - TZ=Asia/Tehran
+
+    volumes:
+      - ./node-red-data:/data
+
+    networks:
+      - iot-hld-network
+
+networks:
+  iot-hld-network:
+    driver: bridge

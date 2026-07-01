@@ -3,6 +3,7 @@ export const ROUT_PATHS = {
   DASHBOARD: "/dashboard",
   DEVICES: "/devices",
   EVENTS: "/events",
+  REMINDERS: "/reminders",
   SIGNUP: "/signup",
 } as const;
 

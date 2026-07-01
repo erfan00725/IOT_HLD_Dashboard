@@ -6,9 +6,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import type { FC, ReactNode } from "react";
-import Link from "next/link";
 import { headers } from "next/headers";
-import { sidebarItems } from "@/data/mock";
 import { DarkModeToggle } from "@/components/layout/dark-mode-toggle";
 import { getMyProfile } from "@/lib/prisma/queries/profiles";
 import {
@@ -271,8 +269,6 @@ export async function AppShell({
   // Read the current pathname (set by the proxy middleware) so the sidebar
   // can highlight the active route. Falls back to "/" if unavailable.
   const pathname = (await headers()).get("x-pathname") ?? "/";
-
-  console.log((await headers()).get("x-pathname"));
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0f1117] text-slate-900 dark:text-slate-100">
