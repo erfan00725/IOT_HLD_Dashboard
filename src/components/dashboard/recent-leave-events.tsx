@@ -1,3 +1,4 @@
+"use client";
 import {
   Clock,
   PersonStanding,
@@ -12,10 +13,8 @@ import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
 import { IconBubble } from "@/components/ui/icon-bubble";
 import { ICON_BUBBLE_STYLES } from "@/lib/utils/tone-styles";
-import {
-  getRecentStateEventsForDashboard,
-  getFirstHome,
-} from "@/lib/prisma/queries/dashboard";
+import { useQuery } from "@tanstack/react-query";
+import { fetchRecentLeaveEvents } from "@/lib/api/dashboard";
 import { formatTime } from "@/lib/utils/dashboard-mappers";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -77,16 +76,21 @@ function NoEvents() {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export async function RecentLeaveEvents() {
-  const home = await getFirstHome();
-
-  const rawEvents = home ? await getRecentStateEventsForDashboard(home.id) : [];
+export function RecentLeaveEvents() {
+  const {
+    data: rawEvents = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["recentLeaveEvents"],
+    queryFn: fetchRecentLeaveEvents,
+    staleTime: 30_000,
+    retry: 1,
+  });
 
   const events: LeaveEvent[] = rawEvents.map((ev) => ({
-    // Supabase types `devices` as an array; runtime is a single object.
     icon: categoryToIcon(ev.devices?.category),
     time: formatTime(ev.observed_at),
-    // see above.
     title: ev.devices?.name || "_",
     sub: `State: ${ev.state_value}`,
   }));
@@ -100,7 +104,15 @@ export async function RecentLeaveEvents() {
         viewAllHref="#history"
       />
       <ul className="grid gap-4">
-        {events.length > 0 ? (
+        {isLoading ? (
+          <li className="py-4 text-center text-sm text-slate-400 dark:text-slate-500">
+            Loading...
+          </li>
+        ) : error ? (
+          <li className="py-4 text-center text-sm text-red-500">
+            Unable to load recent events.
+          </li>
+        ) : events.length > 0 ? (
           events.map((ev, i) => <EventRow key={i} {...ev} />)
         ) : (
           <NoEvents />

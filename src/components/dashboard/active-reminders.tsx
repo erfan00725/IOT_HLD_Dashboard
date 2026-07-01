@@ -1,3 +1,4 @@
+"use client";
 import {
   Bell,
   Home,
@@ -9,15 +10,10 @@ import {
 import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
 import { IconBubble } from "@/components/ui/icon-bubble";
-import {
-  type Priority,
-  PRIORITY_BADGE_STYLES,
-  ICON_BUBBLE_STYLES,
-} from "@/lib/utils/tone-styles";
-import {
-  getActiveReminderRulesForDashboard,
-  getFirstHome,
-} from "@/lib/prisma/queries/dashboard";
+import { ICON_BUBBLE_STYLES, type Priority } from "@/lib/utils/tone-styles";
+import { PriorityBadge } from "@/components/ui/priority-badge";
+import { useQuery } from "@tanstack/react-query";
+import { fetchActiveReminders } from "@/lib/api/dashboard";
 import {
   severityToPriority,
   categoryToTone,
@@ -47,20 +43,6 @@ function categoryToIcon(category?: string): LucideIcon {
     default:
       return Home;
   }
-}
-
-// ─── Priority badge ────────────────────────────────────────────────────────
-
-function PriorityBadge({ priority }: { priority: Priority }) {
-  return (
-    <span
-      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${
-        PRIORITY_BADGE_STYLES[priority]
-      }`}
-    >
-      {priority}
-    </span>
-  );
 }
 
 // ─── Single reminder row ──────────────────────────────────────────────────────
@@ -100,12 +82,17 @@ function NoReminders() {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export async function ActiveReminders() {
-  const home = await getFirstHome();
-
-  const rawRules = home
-    ? await getActiveReminderRulesForDashboard(home.id)
-    : [];
+export function ActiveReminders() {
+  const {
+    data: rawRules = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["activeReminders"],
+    queryFn: fetchActiveReminders,
+    staleTime: 30_000,
+    retry: 1,
+  });
 
   const reminders: ReminderDisplayRow[] = rawRules.map((rule) => ({
     icon: categoryToIcon(rule.devices?.category),
@@ -124,7 +111,15 @@ export async function ActiveReminders() {
         viewAllHref="#reminders"
       />
       <ul className="flex flex-col gap-4 w-full">
-        {reminders.length > 0 ? (
+        {isLoading ? (
+          <li className="py-4 text-center text-sm text-slate-400 dark:text-slate-500">
+            Loading...
+          </li>
+        ) : error ? (
+          <li className="py-4 text-center text-sm text-red-500">
+            Unable to load active reminders.
+          </li>
+        ) : reminders.length > 0 ? (
           reminders.map((r) => <ReminderRow key={r.title} {...r} />)
         ) : (
           <NoReminders />

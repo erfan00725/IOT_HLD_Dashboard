@@ -6,3 +6,4 @@ export { StatusTile } from "./status-tile";
 export { StatusBadge } from "./status-badge";
 export { SearchInput } from "./search-input";
 export { FilterTabs, type FilterTabOption } from "./filter-tabs";
+export { PriorityBadge } from "./priority-badge";
