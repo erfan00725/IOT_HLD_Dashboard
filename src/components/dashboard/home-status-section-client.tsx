@@ -11,12 +11,13 @@ import {
   RefreshCw,
   type LucideIcon,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ToneColor } from "@/lib/utils/tone-styles";
 import { CardPanel, PanelHeader, StatusTile } from "../ui";
 import { formatTime } from "@/lib/utils/dashboard-mappers";
 import { useMqttTopic } from "@/hooks/useMqttTopic";
 import { fetchDashboardStatus } from "@/lib/api/dashboard";
+import { useEffect, useState } from "react";
 
 interface StatusTileData {
   icon: LucideIcon;
@@ -25,7 +26,13 @@ interface StatusTileData {
   tone: ToneColor;
 }
 
-const HeaderActions = ({ isConnected }: { isConnected?: boolean }) => (
+const HeaderActions = ({
+  isConnected,
+  refetch,
+}: {
+  isConnected?: boolean;
+  refetch: () => void;
+}) => (
   <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
     <div className="flex items-center gap-1">
       <Wifi className="size-3.5" strokeWidth={2} aria-hidden="true" />
@@ -35,7 +42,7 @@ const HeaderActions = ({ isConnected }: { isConnected?: boolean }) => (
       type="button"
       className="flex items-center gap-1 rounded-lg px-2 py-1 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
       aria-label="Refresh home status"
-      onClick={() => window.location.reload()}
+      onClick={() => void refetch()}
     >
       <RefreshCw className="size-3.5" strokeWidth={2} aria-hidden="true" />
       <span>Refresh</span>
@@ -44,18 +51,45 @@ const HeaderActions = ({ isConnected }: { isConnected?: boolean }) => (
 );
 
 export function HomeStatusSectionClient() {
-  const { connected } = useMqttTopic("home/presence_main/state");
+  const { connected, payload } = useMqttTopic("home/presence_main/state");
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const {
+    data,
+    isLoading: isQueryLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["dashboardStatus"],
     queryFn: fetchDashboardStatus,
-    staleTime: 30_000,
+    staleTime: 0,
     retry: 1,
   });
+
+  const [isLoading, setIsLoading] = useState(isQueryLoading);
 
   const home = data?.home;
   const deviceStates = data?.deviceStates ?? [];
   const activeSession = data?.activeSession ?? null;
+
+  useEffect(() => {
+    setIsLoading(true);
+    new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
+      queryClient
+        .resetQueries({ queryKey: ["dashboardStatus"] })
+        .then((res) => {
+          console.log(res);
+          // TODO: continue from here
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    });
+  }, [payload]);
+
+  useEffect(() => {
+    console.log(data);
+  }, [data]);
 
   const tiles: StatusTileData[] = (() => {
     if (isLoading || error || !home) {
@@ -172,16 +206,21 @@ export function HomeStatusSectionClient() {
         title={home ? home.name : "Home Status"}
         headingId="home-status-heading"
         short_description="Live snapshot"
-        actions={<HeaderActions isConnected={connected} />}
+        actions={
+          <HeaderActions
+            isConnected={connected}
+            refetch={() => {
+              setIsLoading(true);
+              queryClient
+                .resetQueries({ queryKey: ["dashboardStatus"] })
+                .finally(() => {
+                  setIsLoading(false);
+                });
+            }}
+          />
+        }
       />
       <div className="mt-5 flex items-center justify-between gap-3">
-        <button
-          type="button"
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-          onClick={() => void refetch()}
-        >
-          Refresh status
-        </button>
         {error ? (
           <span className="text-xs text-red-500">Unable to load status</span>
         ) : null}

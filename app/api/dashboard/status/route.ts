@@ -16,10 +16,8 @@ export async function GET() {
       );
     }
 
-    const [deviceStates, activeSession] = await Promise.all([
-      getDashboardDeviceStates(home.id),
-      getActiveLeaveSessionForDashboard(home.id),
-    ]);
+    const deviceStates = await getDashboardDeviceStates(home.id);
+    const activeSession = await getActiveLeaveSessionForDashboard(home.id);
 
     return NextResponse.json(
       { home, deviceStates, activeSession },

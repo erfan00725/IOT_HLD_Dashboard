@@ -119,7 +119,7 @@ export async function getRecentStateEventsForDashboard(homeId: string) {
           : null,
       }));
     },
-    homeId,
+    `recent-state-events-${homeId}`,
     60,
   );
 
@@ -138,11 +138,17 @@ export async function getRecentStateEventsForDashboard(homeId: string) {
  *   devices: { name, category } }[]`
  */
 export async function getAllRulesForAutomationTable(homeId: string) {
-  const rules = await prisma.reminder_rules.findMany({
-    where: { home_id: homeId },
-    orderBy: { severity: "desc" },
-    include: { devices: true },
-  });
+  const rules = await nextCache(
+    async () => {
+      return await prisma.reminder_rules.findMany({
+        where: { home_id: homeId },
+        orderBy: { severity: "desc" },
+        include: { devices: true },
+      });
+    },
+    `automation-rules-${homeId}`,
+    60,
+  );
 
   return rules.map((rule) => ({
     id: rule.id,
