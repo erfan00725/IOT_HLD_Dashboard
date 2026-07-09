@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ToneColor } from "@/lib/utils/tone-styles";
-import { CardPanel, PanelHeader, StatusTile } from "../ui";
+import { CardPanel, PanelHeader, StatusTile, AwayAlertModal } from "../ui";
 import { formatTime } from "@/lib/utils/dashboard-mappers";
 import { useMqttTopic } from "@/hooks/useMqttTopic";
 import { fetchDashboardStatus } from "@/lib/api/dashboard";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface StatusTileData {
   icon: LucideIcon;
@@ -72,6 +72,22 @@ export function HomeStatusSectionClient() {
   const deviceStates = data?.deviceStates ?? [];
   const activeSession = data?.activeSession ?? null;
 
+  // --- Away-alert modal state ---
+  const [showAwayAlert, setShowAwayAlert] = useState(false);
+  const [awayStartedAt, setAwayStartedAt] = useState<string | null>(null);
+  const prevActiveSessionRef = useRef<typeof activeSession>(activeSession);
+
+  // Detect the transition from "home" → "away" (activeSession goes from null to present)
+  useEffect(() => {
+    const prev = prevActiveSessionRef.current;
+    prevActiveSessionRef.current = activeSession;
+
+    if (!prev && activeSession) {
+      setAwayStartedAt(activeSession.started_at);
+      setShowAwayAlert(true);
+    }
+  }, [activeSession]);
+
   useEffect(() => {
     setIsLoading(true);
     new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
@@ -90,6 +106,8 @@ export function HomeStatusSectionClient() {
   useEffect(() => {
     console.log(data);
   }, [data]);
+
+  // Remove console.log of data (keep only the away transition logic above)
 
   const tiles: StatusTileData[] = (() => {
     if (isLoading || error || !home) {
@@ -200,36 +218,43 @@ export function HomeStatusSectionClient() {
   })();
 
   return (
-    <CardPanel className="p-5 sm:p-6" aria-labelledby="home-status-heading">
-      <PanelHeader
-        icon={Home}
-        title={home ? home.name : "Home Status"}
-        headingId="home-status-heading"
-        short_description="Live snapshot"
-        actions={
-          <HeaderActions
-            isConnected={connected}
-            refetch={() => {
-              setIsLoading(true);
-              queryClient
-                .resetQueries({ queryKey: ["dashboardStatus"] })
-                .finally(() => {
-                  setIsLoading(false);
-                });
-            }}
-          />
-        }
+    <>
+      <AwayAlertModal
+        isOpen={showAwayAlert}
+        onClose={() => setShowAwayAlert(false)}
+        startedAt={awayStartedAt}
       />
-      <div className="mt-5 flex items-center justify-between gap-3">
-        {error ? (
-          <span className="text-xs text-red-500">Unable to load status</span>
-        ) : null}
-      </div>
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-        {tiles.map((tile) => (
-          <StatusTile key={tile.label} {...tile} />
-        ))}
-      </div>
-    </CardPanel>
+      <CardPanel className="p-5 sm:p-6" aria-labelledby="home-status-heading">
+        <PanelHeader
+          icon={Home}
+          title={home ? home.name : "Home Status"}
+          headingId="home-status-heading"
+          short_description="Live snapshot"
+          actions={
+            <HeaderActions
+              isConnected={connected}
+              refetch={() => {
+                setIsLoading(true);
+                queryClient
+                  .resetQueries({ queryKey: ["dashboardStatus"] })
+                  .finally(() => {
+                    setIsLoading(false);
+                  });
+              }}
+            />
+          }
+        />
+        <div className="mt-5 flex items-center justify-between gap-3">
+          {error ? (
+            <span className="text-xs text-red-500">Unable to load status</span>
+          ) : null}
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+          {tiles.map((tile) => (
+            <StatusTile key={tile.label} {...tile} />
+          ))}
+        </div>
+      </CardPanel>
+    </>
   );
 }
