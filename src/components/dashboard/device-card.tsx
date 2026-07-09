@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { MoreVertical, MapPin, Clock, Bell, Power } from "lucide-react";
 import { CardPanel, IconBubble, StatusBadge, Toggle } from "@/components/ui";
-import { ICON_BUBBLE_STYLES, type ToneColor } from "@/lib/utils/tone-styles";
 import {
-  categoryToTone,
-  formatTime,
-} from "@/lib/utils/dashboard-mappers";
+  ICON_BUBBLE_STYLES,
+  classificationToTone,
+} from "@/lib/utils/tone-styles";
+import { categoryToTone, formatTime } from "@/lib/utils/dashboard-mappers";
 import { classifyDevice } from "@/lib/utils/device-health";
 import {
   deviceCategoryToIcon,
@@ -17,22 +17,8 @@ import {
   toggleDeviceActiveAction,
   toggleDeviceReminderAction,
 } from "@/lib/supabase/actions/devices";
+import { useOptimisticToggle } from "@/hooks/useOptimisticToggle";
 import type { DevicesPageDevice } from "@/lib/prisma/queries/dashboard";
-
-// Map a device classification to the tone used for the status badge.
-const CLASS_TO_TONE: Record<"Online" | "Warning" | "Offline", ToneColor> = {
-  Online: "teal",
-  Warning: "amber",
-  Offline: "red",
-};
-
-function classToLabel(c: "Online" | "Warning" | "Offline"): string {
-  return c === "Online"
-    ? "Online"
-    : c === "Warning"
-      ? "Warning"
-      : "Offline";
-}
 
 export interface DeviceCardProps {
   device: DevicesPageDevice;
@@ -40,39 +26,33 @@ export interface DeviceCardProps {
 
 export function DeviceCard({ device: initialDevice }: DeviceCardProps) {
   const [device, setDevice] = useState(initialDevice);
-  const [pendingField, setPendingField] = useState<
-    "active" | "reminder" | null
-  >(null);
-  const [, startTransition] = useTransition();
+
+  const { trigger: triggerActive, isPending: isPendingActive } =
+    useOptimisticToggle((val: boolean) =>
+      toggleDeviceActiveAction(device.id, val),
+    );
+
+  const { trigger: triggerReminder, isPending: isPendingReminder } =
+    useOptimisticToggle((val: boolean) =>
+      toggleDeviceReminderAction(device.id, val),
+    );
 
   function handleToggleActive(value: boolean) {
     const previous = device;
-    setDevice((d) => ({ ...d, active: value }));
-    setPendingField("active");
-    startTransition(async () => {
-      try {
-        await toggleDeviceActiveAction(device.id, value);
-      } catch {
-        setDevice(previous);
-      } finally {
-        setPendingField(null);
-      }
-    });
+    triggerActive(
+      value,
+      () => setDevice((d) => ({ ...d, active: value })),
+      () => setDevice(previous),
+    );
   }
 
   function handleToggleReminder(value: boolean) {
     const previous = device;
-    setDevice((d) => ({ ...d, reminder_enabled: value }));
-    setPendingField("reminder");
-    startTransition(async () => {
-      try {
-        await toggleDeviceReminderAction(device.id, value);
-      } catch {
-        setDevice(previous);
-      } finally {
-        setPendingField(null);
-      }
-    });
+    triggerReminder(
+      value,
+      () => setDevice((d) => ({ ...d, reminder_enabled: value })),
+      () => setDevice(previous),
+    );
   }
 
   const Icon = deviceCategoryToIcon(device.category);
@@ -84,10 +64,10 @@ export function DeviceCard({ device: initialDevice }: DeviceCardProps) {
           device.expected_safe_state,
         )
       : "Offline";
-  const statusTone = device.active ? CLASS_TO_TONE[deviceClass] : "slate";
-  const statusLabel = device.active
-    ? classToLabel(deviceClass)
-    : "Disabled";
+  const statusTone = device.active
+    ? classificationToTone(deviceClass)
+    : "slate";
+  const statusLabel = device.active ? deviceClass : "Disabled";
 
   return (
     <CardPanel className="group gap-0 p-5" aria-label={`Device ${device.name}`}>
@@ -113,7 +93,11 @@ export function DeviceCard({ device: initialDevice }: DeviceCardProps) {
           aria-label={`More options for ${device.name}`}
           className="rounded-lg p-1 text-slate-400 transition-opacity hover:bg-slate-100 hover:text-slate-600 focus-visible:opacity-100 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300 group-hover:opacity-100"
         >
-          <MoreVertical className="size-4" strokeWidth={1.8} aria-hidden="true" />
+          <MoreVertical
+            className="size-4"
+            strokeWidth={1.8}
+            aria-hidden="true"
+          />
         </button>
       </div>
 
@@ -147,14 +131,14 @@ export function DeviceCard({ device: initialDevice }: DeviceCardProps) {
           icon={Power}
           label="Active"
           enabled={device.active}
-          disabled={pendingField === "active"}
+          disabled={isPendingActive}
           onChange={handleToggleActive}
         />
         <ToggleRow
           icon={Bell}
           label="Reminders"
           enabled={device.reminder_enabled}
-          disabled={pendingField === "reminder"}
+          disabled={isPendingReminder}
           onChange={handleToggleReminder}
         />
       </div>

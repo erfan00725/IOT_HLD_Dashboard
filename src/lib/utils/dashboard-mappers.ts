@@ -4,7 +4,7 @@
  */
 
 import type { Priority, ToneColor } from "@/lib/utils/tone-styles";
-import type { AutomationRule } from "@/components/dashboard/automation-rules";
+import type { AutomationRule } from "@/lib/types/automation-rule";
 import { RulesAutomationType } from "../types/customeTypes";
 
 // ─────────────────────────────────────────────────────────────────────────────

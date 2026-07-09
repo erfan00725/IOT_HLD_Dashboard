@@ -19,6 +19,9 @@ import { useMqttTopic } from "@/hooks/useMqttTopic";
 import { fetchDashboardStatus } from "@/lib/api/dashboard";
 import { useEffect, useRef, useState } from "react";
 
+/** Debounce delay before refetching after an MQTT payload arrives. */
+const MQTT_DEBOUNCE_MS = 4_000;
+
 interface StatusTileData {
   icon: LucideIcon;
   label: string;
@@ -49,6 +52,140 @@ const HeaderActions = ({
     </button>
   </div>
 );
+
+// ---------------------------------------------------------------------------
+// Pure tile builder — extracted from the component for readability & testability
+// ---------------------------------------------------------------------------
+
+type DashboardDeviceState =
+  Awaited<ReturnType<typeof fetchDashboardStatus>> extends {
+    deviceStates: (infer S)[];
+  }
+    ? S
+    : never;
+
+type HomeRecord = Awaited<ReturnType<typeof fetchDashboardStatus>>["home"];
+type ActiveSession = Awaited<
+  ReturnType<typeof fetchDashboardStatus>
+>["activeSession"];
+
+function buildStatusTiles(
+  homeData: HomeRecord | undefined,
+  states: Awaited<ReturnType<typeof fetchDashboardStatus>>["deviceStates"],
+  session: ActiveSession,
+  loading: boolean,
+  queryError: Error | null,
+): StatusTileData[] {
+  if (loading || queryError || !homeData) {
+    return [
+      { icon: PersonStanding, label: "Home", sub: "Loading…", tone: "slate" },
+      { icon: Lightbulb, label: "Lights", sub: "Loading…", tone: "slate" },
+      { icon: Grid2x2, label: "Stove", sub: "Loading…", tone: "slate" },
+      { icon: KeyRound, label: "Keys", sub: "Loading…", tone: "slate" },
+      { icon: LockKeyhole, label: "Door", sub: "Loading…", tone: "slate" },
+    ];
+  }
+
+  const presenceTile: StatusTileData = session
+    ? {
+        icon: PersonStanding,
+        label: "Away",
+        sub: `Since ${formatTime(session.started_at)}`,
+        tone: "teal",
+      }
+    : {
+        icon: PersonStanding,
+        label: "Home",
+        sub: "You are home",
+        tone: "slate",
+      };
+
+  const findByCategory = (cat: string) =>
+    states.find((d) => d.devices?.category === cat);
+
+  const stateOf = (cat: string) => findByCategory(cat)?.state_value ?? null;
+
+  const lightingStates = states.filter(
+    (d) => d.devices?.category === "lighting",
+  );
+  const lightsOnCount = lightingStates.filter(
+    (d) => d.state_value.toLowerCase() !== "off",
+  ).length;
+  const lightingTile: StatusTileData =
+    lightsOnCount > 0
+      ? {
+          icon: Lightbulb,
+          label: "Lights On",
+          sub: `${lightsOnCount} device${lightsOnCount > 1 ? "s" : ""}`,
+          tone: "amber",
+        }
+      : {
+          icon: Lightbulb,
+          label: "Lights Off",
+          sub: "All clear",
+          tone: "teal",
+        };
+
+  const safetyState = stateOf("safety");
+  const stoveTile: StatusTileData =
+    safetyState === null
+      ? { icon: Grid2x2, label: "Stove", sub: "No sensor", tone: "slate" }
+      : safetyState.toLowerCase() === "safe"
+        ? {
+            icon: Grid2x2,
+            label: "Stove Off",
+            sub: "All Clear",
+            tone: "teal",
+          }
+        : {
+            icon: Grid2x2,
+            label: "Stove On",
+            sub: "Check stove",
+            tone: "red",
+          };
+
+  const accessState = stateOf("access");
+  const keyTile: StatusTileData =
+    accessState === null
+      ? { icon: KeyRound, label: "Keys", sub: "No tracker", tone: "slate" }
+      : accessState.toLowerCase() === "detected"
+        ? {
+            icon: KeyRound,
+            label: "Keys Detected",
+            sub: "Found nearby",
+            tone: "teal",
+          }
+        : {
+            icon: KeyRound,
+            label: "Keys Missing",
+            sub: "Not detected",
+            tone: "red",
+          };
+
+  const doorState = stateOf("opening");
+  const doorTile: StatusTileData =
+    doorState === null
+      ? { icon: LockKeyhole, label: "Door", sub: "No sensor", tone: "slate" }
+      : doorState.toLowerCase() === "locked"
+        ? {
+            icon: LockKeyhole,
+            label: "Door Locked",
+            sub: "Front Door",
+            tone: "teal",
+          }
+        : {
+            icon: LockKeyhole,
+            label: "Door Unlocked",
+            sub: "Front Door",
+            tone: "red",
+          };
+
+  return [presenceTile, lightingTile, stoveTile, keyTile, doorTile];
+}
+
+// ---------------------------------------------------------------------------
+// Client component
+// ---------------------------------------------------------------------------
 
 export function HomeStatusSectionClient() {
   const { connected, payload } = useMqttTopic("home/presence_main/state");
@@ -88,134 +225,25 @@ export function HomeStatusSectionClient() {
     }
   }, [activeSession]);
 
+  // Debounced refetch after MQTT state change
   useEffect(() => {
     setIsLoading(true);
-    new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
+    new Promise((resolve) => setTimeout(resolve, MQTT_DEBOUNCE_MS)).then(() => {
       queryClient
         .resetQueries({ queryKey: ["dashboardStatus"] })
-        .then((res) => {
-          console.log(res);
-          // TODO: continue from here
-        })
         .finally(() => {
           setIsLoading(false);
         });
     });
   }, [payload]);
 
-  useEffect(() => {
-    console.log(data);
-  }, [data]);
-
-  // Remove console.log of data (keep only the away transition logic above)
-
-  const tiles: StatusTileData[] = (() => {
-    if (isLoading || error || !home) {
-      return [
-        { icon: PersonStanding, label: "Home", sub: "Loading…", tone: "slate" },
-        { icon: Lightbulb, label: "Lights", sub: "Loading…", tone: "slate" },
-        { icon: Grid2x2, label: "Stove", sub: "Loading…", tone: "slate" },
-        { icon: KeyRound, label: "Keys", sub: "Loading…", tone: "slate" },
-        { icon: LockKeyhole, label: "Door", sub: "Loading…", tone: "slate" },
-      ];
-    }
-
-    const presenceTile: StatusTileData = activeSession
-      ? {
-          icon: PersonStanding,
-          label: "Away",
-          sub: `Since ${formatTime(activeSession.started_at)}`,
-          tone: "teal",
-        }
-      : {
-          icon: PersonStanding,
-          label: "Home",
-          sub: "You are home",
-          tone: "slate",
-        };
-
-    const findByCategory = (cat: string) =>
-      deviceStates.find((d) => d.devices?.category === cat);
-
-    const stateOf = (cat: string) => findByCategory(cat)?.state_value ?? null;
-
-    const lightingStates = deviceStates.filter(
-      (d) => d.devices?.category === "lighting",
-    );
-    const lightsOnCount = lightingStates.filter(
-      (d) => d.state_value.toLowerCase() !== "off",
-    ).length;
-    const lightingTile: StatusTileData =
-      lightsOnCount > 0
-        ? {
-            icon: Lightbulb,
-            label: "Lights On",
-            sub: `${lightsOnCount} device${lightsOnCount > 1 ? "s" : ""}`,
-            tone: "amber",
-          }
-        : {
-            icon: Lightbulb,
-            label: "Lights Off",
-            sub: "All clear",
-            tone: "teal",
-          };
-
-    const safetyState = stateOf("safety");
-    const stoveTile: StatusTileData =
-      safetyState === null
-        ? { icon: Grid2x2, label: "Stove", sub: "No sensor", tone: "slate" }
-        : safetyState.toLowerCase() === "safe"
-          ? {
-              icon: Grid2x2,
-              label: "Stove Off",
-              sub: "All Clear",
-              tone: "teal",
-            }
-          : {
-              icon: Grid2x2,
-              label: "Stove On",
-              sub: "Check stove",
-              tone: "red",
-            };
-
-    const accessState = stateOf("access");
-    const keyTile: StatusTileData =
-      accessState === null
-        ? { icon: KeyRound, label: "Keys", sub: "No tracker", tone: "slate" }
-        : accessState.toLowerCase() === "detected"
-          ? {
-              icon: KeyRound,
-              label: "Keys Detected",
-              sub: "Found nearby",
-              tone: "teal",
-            }
-          : {
-              icon: KeyRound,
-              label: "Keys Missing",
-              sub: "Not detected",
-              tone: "red",
-            };
-
-    const doorState = stateOf("opening");
-    const doorTile: StatusTileData =
-      doorState === null
-        ? { icon: LockKeyhole, label: "Door", sub: "No sensor", tone: "slate" }
-        : doorState.toLowerCase() === "locked"
-          ? {
-              icon: LockKeyhole,
-              label: "Door Locked",
-              sub: "Front Door",
-              tone: "teal",
-            }
-          : {
-              icon: LockKeyhole,
-              label: "Door Unlocked",
-              sub: "Front Door",
-              tone: "red",
-            };
-
-    return [presenceTile, lightingTile, stoveTile, keyTile, doorTile];
-  })();
+  const tiles: StatusTileData[] = buildStatusTiles(
+    home,
+    deviceStates,
+    activeSession,
+    isLoading,
+    error,
+  );
 
   return (
     <>

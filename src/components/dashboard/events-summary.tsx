@@ -1,5 +1,10 @@
-import { CalendarClock, Activity, CalendarDays, AlertTriangle } from "lucide-react";
-import { CardPanel, StatusTile } from "@/components/ui";
+import {
+  CalendarClock,
+  Activity,
+  CalendarDays,
+  AlertTriangle,
+} from "lucide-react";
+import { SummaryPanel } from "@/components/ui/summary-panel";
 
 interface EventsSummaryProps {
   total: number;
@@ -14,8 +19,7 @@ interface EventsSummaryProps {
  * A compact row of summary tiles shown at the top of the events page:
  * Total, Today, Active Days, Alerts.
  *
- * Reuses the shared `StatusTile` primitive (the same one the dashboard
- * hero row and devices summary use) so the visual language stays consistent.
+ * Delegates layout to the shared `<SummaryPanel>` component.
  */
 export function EventsSummary({
   total,
@@ -24,42 +28,29 @@ export function EventsSummary({
   alerts,
 }: EventsSummaryProps) {
   return (
-    <CardPanel
-      className="gap-4 p-5 sm:p-6"
-      aria-labelledby="events-summary-heading"
-    >
-      <h2
-        id="events-summary-heading"
-        className="text-sm font-semibold text-slate-900 dark:text-slate-100"
-      >
-        Overview
-      </h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatusTile
-          icon={CalendarClock}
-          label={String(total)}
-          sub="Total events"
-          tone="slate"
-        />
-        <StatusTile
-          icon={Activity}
-          label={String(today)}
-          sub="Today"
-          tone="teal"
-        />
-        <StatusTile
-          icon={CalendarDays}
-          label={String(activeDays)}
-          sub="Active days"
-          tone="slate"
-        />
-        <StatusTile
-          icon={AlertTriangle}
-          label={String(alerts)}
-          sub="Alerts"
-          tone="amber"
-        />
-      </div>
-    </CardPanel>
+    <SummaryPanel
+      headingId="events-summary-heading"
+      tiles={[
+        {
+          icon: CalendarClock,
+          label: String(total),
+          sub: "Total events",
+          tone: "slate",
+        },
+        { icon: Activity, label: String(today), sub: "Today", tone: "teal" },
+        {
+          icon: CalendarDays,
+          label: String(activeDays),
+          sub: "Active days",
+          tone: "slate",
+        },
+        {
+          icon: AlertTriangle,
+          label: String(alerts),
+          sub: "Alerts",
+          tone: "amber",
+        },
+      ]}
+    />
   );
 }

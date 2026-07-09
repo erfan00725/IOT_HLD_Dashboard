@@ -1,14 +1,7 @@
 "use client";
 
 import { Activity, CheckCircle2, AlertCircle } from "lucide-react";
-import {
-  PieChart,
-  Pie,
-  Sector,
-  Tooltip,
-  ResponsiveContainer,
-  type TooltipProps,
-} from "recharts";
+import { PieChart, Pie, Sector, Tooltip, ResponsiveContainer } from "recharts";
 import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
 
@@ -29,14 +22,18 @@ export interface DeviceHealthProps {
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
 
-// @ts-expect-error
-function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
+interface TooltipEntry {
+  payload: { name: string; value: number; pct: number; color: string };
+}
+
+interface TooltipContentProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+}
+
+function CustomTooltip({ active, payload }: TooltipContentProps) {
   if (!active || !payload?.length) return null;
-  const { name, value, pct } = payload[0].payload as {
-    name: string;
-    value: number;
-    pct: number;
-  };
+  const { name, value, pct } = payload[0]!.payload;
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 shadow-md text-xs">
       <p className="font-semibold text-slate-800 dark:text-slate-200">{name}</p>

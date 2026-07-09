@@ -1,5 +1,5 @@
 import { Cpu, Wifi, WifiOff, AlertTriangle } from "lucide-react";
-import { CardPanel, StatusTile } from "@/components/ui";
+import { SummaryPanel } from "@/components/ui/summary-panel";
 
 interface DevicesSummaryProps {
   total: number;
@@ -12,8 +12,7 @@ interface DevicesSummaryProps {
  * A compact row of summary tiles shown at the top of the devices page:
  * Total, Online, Offline, Warnings.
  *
- * Reuses the shared `StatusTile` primitive (the same one the dashboard
- * hero row uses) so the visual language stays consistent.
+ * Delegates layout to the shared `<SummaryPanel>` component.
  */
 export function DevicesSummary({
   total,
@@ -22,39 +21,24 @@ export function DevicesSummary({
   warning,
 }: DevicesSummaryProps) {
   return (
-    <CardPanel className="gap-4 p-5 sm:p-6" aria-labelledby="devices-summary-heading">
-      <h2
-        id="devices-summary-heading"
-        className="text-sm font-semibold text-slate-900 dark:text-slate-100"
-      >
-        Overview
-      </h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatusTile
-          icon={Cpu}
-          label={String(total)}
-          sub="Total devices"
-          tone="slate"
-        />
-        <StatusTile
-          icon={Wifi}
-          label={String(online)}
-          sub="Online"
-          tone="teal"
-        />
-        <StatusTile
-          icon={AlertTriangle}
-          label={String(warning)}
-          sub="Warnings"
-          tone="amber"
-        />
-        <StatusTile
-          icon={WifiOff}
-          label={String(offline)}
-          sub="Offline"
-          tone="red"
-        />
-      </div>
-    </CardPanel>
+    <SummaryPanel
+      headingId="devices-summary-heading"
+      tiles={[
+        {
+          icon: Cpu,
+          label: String(total),
+          sub: "Total devices",
+          tone: "slate",
+        },
+        { icon: Wifi, label: String(online), sub: "Online", tone: "teal" },
+        {
+          icon: AlertTriangle,
+          label: String(warning),
+          sub: "Warnings",
+          tone: "amber",
+        },
+        { icon: WifiOff, label: String(offline), sub: "Offline", tone: "red" },
+      ]}
+    />
   );
 }

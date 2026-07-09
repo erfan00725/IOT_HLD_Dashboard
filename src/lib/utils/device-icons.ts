@@ -14,10 +14,16 @@ import {
   Thermometer,
   Plug,
   Cpu,
+  Clock,
+  Home,
   type LucideIcon,
 } from "lucide-react";
 
-const DEVICE_ICON_BY_CATEGORY: Record<string, LucideIcon> = {
+/**
+ * Comprehensive category → icon mapping used across dashboard components.
+ * Covers presence, lighting, safety, access, opening, climate, and utility.
+ */
+const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   presence: PersonStanding,
   lighting: Lightbulb,
   safety: ShieldAlert,
@@ -30,7 +36,19 @@ const DEVICE_ICON_BY_CATEGORY: Record<string, LucideIcon> = {
 /** Returns a Lucide icon for a device category, falling back to `Cpu`. */
 export function deviceCategoryToIcon(category?: string | null): LucideIcon {
   if (!category) return Cpu;
-  return DEVICE_ICON_BY_CATEGORY[category] ?? Cpu;
+  return CATEGORY_ICON_MAP[category] ?? Cpu;
+}
+
+/**
+ * Maps a device category to a Lucide icon for display in reminder/event rows.
+ * Falls back to `Home` for unknown categories by default (configurable).
+ */
+export function categoryToIcon(
+  category?: string,
+  fallback: LucideIcon = Home,
+): LucideIcon {
+  if (!category) return fallback;
+  return CATEGORY_ICON_MAP[category] ?? fallback;
 }
 
 /** Human-readable label for a device category slug. */

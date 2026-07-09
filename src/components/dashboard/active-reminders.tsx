@@ -1,16 +1,11 @@
 "use client";
-import {
-  Bell,
-  Home,
-  Lightbulb,
-  ShieldAlert,
-  KeyRound,
-  type LucideIcon,
-} from "lucide-react";
+import { Bell, type LucideIcon } from "lucide-react";
 import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
 import { IconBubble } from "@/components/ui/icon-bubble";
 import { ICON_BUBBLE_STYLES, type Priority } from "@/lib/utils/tone-styles";
+import { categoryToIcon } from "@/lib/utils/device-icons";
+import { QueryStateWrapper } from "@/components/ui/query-state-wrapper";
 import { PriorityBadge } from "@/components/ui/priority-badge";
 import { useQuery } from "@tanstack/react-query";
 import { fetchActiveReminders } from "@/lib/api/dashboard";
@@ -28,21 +23,6 @@ interface ReminderDisplayRow {
   sub: string;
   time: string;
   priority: Priority;
-}
-
-// ─── Category → icon ─────────────────────────────────────────────────────────
-
-function categoryToIcon(category?: string): LucideIcon {
-  switch (category) {
-    case "lighting":
-      return Lightbulb;
-    case "safety":
-      return ShieldAlert;
-    case "access":
-      return KeyRound;
-    default:
-      return Home;
-  }
 }
 
 // ─── Single reminder row ──────────────────────────────────────────────────────
@@ -110,21 +90,20 @@ export function ActiveReminders() {
         headingId="reminders-heading"
         viewAllHref="#reminders"
       />
-      <ul className="flex flex-col gap-4 w-full">
-        {isLoading ? (
-          <li className="py-4 text-center text-sm text-slate-400 dark:text-slate-500">
-            Loading...
-          </li>
-        ) : error ? (
-          <li className="py-4 text-center text-sm text-red-500">
-            Unable to load active reminders.
-          </li>
-        ) : reminders.length > 0 ? (
-          reminders.map((r) => <ReminderRow key={r.title} {...r} />)
-        ) : (
-          <NoReminders />
-        )}
-      </ul>
+      <QueryStateWrapper
+        isLoading={isLoading}
+        error={error}
+        loadingMessage="Loading…"
+        errorMessage="Unable to load active reminders."
+      >
+        <ul className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto pr-1">
+          {reminders.length > 0 ? (
+            reminders.map((r) => <ReminderRow key={r.title} {...r} />)
+          ) : (
+            <NoReminders />
+          )}
+        </ul>
+      </QueryStateWrapper>
     </CardPanel>
   );
 }

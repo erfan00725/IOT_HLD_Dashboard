@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import {
-  Bell,
-  Home,
-  KeyRound,
-  Lightbulb,
-  PersonStanding,
-  ShieldAlert,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { Bell, PersonStanding, X, type LucideIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchActiveReminders,
@@ -26,6 +17,7 @@ import {
   type Priority,
   type ToneColor,
 } from "@/lib/utils/tone-styles";
+import { categoryToIcon } from "@/lib/utils/device-icons";
 import { PriorityBadge } from "@/components/ui/priority-badge";
 
 interface AwayAlertModalProps {
@@ -46,21 +38,6 @@ interface ReminderDisplayRow {
   time: string;
   priority: Priority;
   tone: ToneColor;
-}
-
-// ─── Category → icon ─────────────────────────────────────────────────────────
-
-function categoryToIcon(category?: string): LucideIcon {
-  switch (category) {
-    case "lighting":
-      return Lightbulb;
-    case "safety":
-      return ShieldAlert;
-    case "access":
-      return KeyRound;
-    default:
-      return Home;
-  }
 }
 
 /** Maps a raw reminder rule row into the display shape used by the modal. */

@@ -1,18 +1,11 @@
 "use client";
-import {
-  Clock,
-  PersonStanding,
-  Lightbulb,
-  KeyRound,
-  LockKeyhole,
-  ShieldAlert,
-  type LucideIcon,
-  Home,
-} from "lucide-react";
+import { Clock, type LucideIcon } from "lucide-react";
 import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
 import { IconBubble } from "@/components/ui/icon-bubble";
 import { ICON_BUBBLE_STYLES } from "@/lib/utils/tone-styles";
+import { categoryToIcon } from "@/lib/utils/device-icons";
+import { QueryStateWrapper } from "@/components/ui/query-state-wrapper";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRecentLeaveEvents } from "@/lib/api/dashboard";
 import { formatTime } from "@/lib/utils/dashboard-mappers";
@@ -24,25 +17,6 @@ interface LeaveEvent {
   time: string;
   title?: string;
   sub: string;
-}
-
-// ─── Category → icon ─────────────────────────────────────────────────────────
-
-function categoryToIcon(category?: string): LucideIcon {
-  switch (category) {
-    case "presence":
-      return PersonStanding;
-    case "lighting":
-      return Lightbulb;
-    case "access":
-      return KeyRound;
-    case "opening":
-      return LockKeyhole;
-    case "safety":
-      return ShieldAlert;
-    default:
-      return Clock;
-  }
 }
 
 // ─── Single event row ─────────────────────────────────────────────────────────
@@ -89,7 +63,7 @@ export function RecentLeaveEvents() {
   });
 
   const events: LeaveEvent[] = rawEvents.map((ev) => ({
-    icon: categoryToIcon(ev.devices?.category),
+    icon: categoryToIcon(ev.devices?.category, Clock),
     time: formatTime(ev.observed_at),
     title: ev.devices?.name || "_",
     sub: `State: ${ev.state_value}`,
@@ -104,19 +78,18 @@ export function RecentLeaveEvents() {
         viewAllHref="#history"
       />
       <ul className="grid gap-4">
-        {isLoading ? (
-          <li className="py-4 text-center text-sm text-slate-400 dark:text-slate-500">
-            Loading...
-          </li>
-        ) : error ? (
-          <li className="py-4 text-center text-sm text-red-500">
-            Unable to load recent events.
-          </li>
-        ) : events.length > 0 ? (
-          events.map((ev, i) => <EventRow key={i} {...ev} />)
-        ) : (
-          <NoEvents />
-        )}
+        <QueryStateWrapper
+          isLoading={isLoading}
+          error={error}
+          loadingMessage="Loading…"
+          errorMessage="Unable to load recent events."
+        >
+          {events.length > 0 ? (
+            events.map((ev, i) => <EventRow key={i} {...ev} />)
+          ) : (
+            <NoEvents />
+          )}
+        </QueryStateWrapper>
       </ul>
     </CardPanel>
   );

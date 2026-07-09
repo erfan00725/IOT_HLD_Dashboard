@@ -10,19 +10,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { CardPanel, PanelHeader, IconBubble, Toggle } from "@/components/ui";
-import { type ToneColor, ICON_BUBBLE_STYLES } from "@/lib/utils/tone-styles";
+import { ICON_BUBBLE_STYLES } from "@/lib/utils/tone-styles";
 import { toggleReminderRuleAction } from "@/lib/supabase/actions/reminder-rules";
-
-export interface AutomationRule {
-  id: string;
-  name: string;
-  icon: "home" | "lightbulb" | "shield";
-  iconColor: ToneColor;
-  trigger: string;
-  condition: string;
-  action: string;
-  enabled: boolean;
-}
+import type { AutomationRule } from "@/lib/types/automation-rule";
 
 const ICON_MAP: Record<AutomationRule["icon"], LucideIcon> = {
   home: Home,
