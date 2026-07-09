@@ -1,33 +1,14 @@
 "use client";
 
-import {
-  PersonStanding,
-  Lightbulb,
-  Grid2x2,
-  KeyRound,
-  LockKeyhole,
-  Home,
-  Wifi,
-  RefreshCw,
-  type LucideIcon,
-} from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ToneColor } from "@/lib/utils/tone-styles";
+import { Home, RefreshCw, Wifi } from "lucide-react";
 import { CardPanel, PanelHeader, StatusTile, AwayAlertModal } from "../ui";
-import { formatTime } from "@/lib/utils/dashboard-mappers";
-import { useMqttTopic } from "@/hooks/useMqttTopic";
-import { fetchDashboardStatus } from "@/lib/api/dashboard";
-import { useEffect, useRef, useState } from "react";
+import { buildStatusTiles } from "@/lib/utils/dashboard-tiles";
+import { useDashboardStatusRefresh } from "@/hooks/useDashboardStatusRefresh";
+import type { StatusTileData } from "@/lib/types/dashboard";
 
-/** Debounce delay before refetching after an MQTT payload arrives. */
-const MQTT_DEBOUNCE_MS = 4_000;
-
-interface StatusTileData {
-  icon: LucideIcon;
-  label: string;
-  sub: string;
-  tone: ToneColor;
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Header actions (connection status + refresh button)
+// ─────────────────────────────────────────────────────────────────────────────
 
 const HeaderActions = ({
   isConnected,
@@ -53,189 +34,33 @@ const HeaderActions = ({
   </div>
 );
 
-// ---------------------------------------------------------------------------
-// Pure tile builder — extracted from the component for readability & testability
-// ---------------------------------------------------------------------------
-
-type DashboardDeviceState =
-  Awaited<ReturnType<typeof fetchDashboardStatus>> extends {
-    deviceStates: (infer S)[];
-  }
-    ? S
-    : never;
-
-type HomeRecord = Awaited<ReturnType<typeof fetchDashboardStatus>>["home"];
-type ActiveSession = Awaited<
-  ReturnType<typeof fetchDashboardStatus>
->["activeSession"];
-
-function buildStatusTiles(
-  homeData: HomeRecord | undefined,
-  states: Awaited<ReturnType<typeof fetchDashboardStatus>>["deviceStates"],
-  session: ActiveSession,
-  loading: boolean,
-  queryError: Error | null,
-): StatusTileData[] {
-  if (loading || queryError || !homeData) {
-    return [
-      { icon: PersonStanding, label: "Home", sub: "Loading…", tone: "slate" },
-      { icon: Lightbulb, label: "Lights", sub: "Loading…", tone: "slate" },
-      { icon: Grid2x2, label: "Stove", sub: "Loading…", tone: "slate" },
-      { icon: KeyRound, label: "Keys", sub: "Loading…", tone: "slate" },
-      { icon: LockKeyhole, label: "Door", sub: "Loading…", tone: "slate" },
-    ];
-  }
-
-  const presenceTile: StatusTileData = session
-    ? {
-        icon: PersonStanding,
-        label: "Away",
-        sub: `Since ${formatTime(session.started_at)}`,
-        tone: "teal",
-      }
-    : {
-        icon: PersonStanding,
-        label: "Home",
-        sub: "You are home",
-        tone: "slate",
-      };
-
-  const findByCategory = (cat: string) =>
-    states.find((d) => d.devices?.category === cat);
-
-  const stateOf = (cat: string) => findByCategory(cat)?.state_value ?? null;
-
-  const lightingStates = states.filter(
-    (d) => d.devices?.category === "lighting",
-  );
-  const lightsOnCount = lightingStates.filter(
-    (d) => d.state_value.toLowerCase() !== "off",
-  ).length;
-  const lightingTile: StatusTileData =
-    lightsOnCount > 0
-      ? {
-          icon: Lightbulb,
-          label: "Lights On",
-          sub: `${lightsOnCount} device${lightsOnCount > 1 ? "s" : ""}`,
-          tone: "amber",
-        }
-      : {
-          icon: Lightbulb,
-          label: "Lights Off",
-          sub: "All clear",
-          tone: "teal",
-        };
-
-  const safetyState = stateOf("safety");
-  const stoveTile: StatusTileData =
-    safetyState === null
-      ? { icon: Grid2x2, label: "Stove", sub: "No sensor", tone: "slate" }
-      : safetyState.toLowerCase() === "safe"
-        ? {
-            icon: Grid2x2,
-            label: "Stove Off",
-            sub: "All Clear",
-            tone: "teal",
-          }
-        : {
-            icon: Grid2x2,
-            label: "Stove On",
-            sub: "Check stove",
-            tone: "red",
-          };
-
-  const accessState = stateOf("access");
-  const keyTile: StatusTileData =
-    accessState === null
-      ? { icon: KeyRound, label: "Keys", sub: "No tracker", tone: "slate" }
-      : accessState.toLowerCase() === "detected"
-        ? {
-            icon: KeyRound,
-            label: "Keys Detected",
-            sub: "Found nearby",
-            tone: "teal",
-          }
-        : {
-            icon: KeyRound,
-            label: "Keys Missing",
-            sub: "Not detected",
-            tone: "red",
-          };
-
-  const doorState = stateOf("opening");
-  const doorTile: StatusTileData =
-    doorState === null
-      ? { icon: LockKeyhole, label: "Door", sub: "No sensor", tone: "slate" }
-      : doorState.toLowerCase() === "locked"
-        ? {
-            icon: LockKeyhole,
-            label: "Door Locked",
-            sub: "Front Door",
-            tone: "teal",
-          }
-        : {
-            icon: LockKeyhole,
-            label: "Door Unlocked",
-            sub: "Front Door",
-            tone: "red",
-          };
-
-  return [presenceTile, lightingTile, stoveTile, keyTile, doorTile];
-}
-
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
 // Client component
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * `HomeStatusSectionClient`
+ *
+ * Thin presentation layer that consumes the `useDashboardStatusRefresh` hook
+ * (React Query + MQTT debounce + away-alert transition) and renders the
+ * status tile grid. All domain logic lives in the hook and in the pure
+ * `buildStatusTiles()` helper under `src/lib/utils/`.
+ */
 export function HomeStatusSectionClient() {
-  const { connected, payload } = useMqttTopic("home/presence_main/state");
-  const queryClient = useQueryClient();
-
   const {
     data,
-    isLoading: isQueryLoading,
+    isLoading,
     error,
+    isConnected,
     refetch,
-  } = useQuery({
-    queryKey: ["dashboardStatus"],
-    queryFn: fetchDashboardStatus,
-    staleTime: 0,
-    retry: 1,
-  });
-
-  const [isLoading, setIsLoading] = useState(isQueryLoading);
+    activeSession,
+    showAwayAlert,
+    awayStartedAt,
+    dismissAwayAlert,
+  } = useDashboardStatusRefresh();
 
   const home = data?.home;
   const deviceStates = data?.deviceStates ?? [];
-  const activeSession = data?.activeSession ?? null;
-
-  // --- Away-alert modal state ---
-  const [showAwayAlert, setShowAwayAlert] = useState(false);
-  const [awayStartedAt, setAwayStartedAt] = useState<string | null>(null);
-  const prevActiveSessionRef = useRef<typeof activeSession>(activeSession);
-
-  // Detect the transition from "home" → "away" (activeSession goes from null to present)
-  useEffect(() => {
-    const prev = prevActiveSessionRef.current;
-    prevActiveSessionRef.current = activeSession;
-
-    if (!prev && activeSession) {
-      setAwayStartedAt(activeSession.started_at);
-      setShowAwayAlert(true);
-    }
-  }, [activeSession]);
-
-  // Debounced refetch after MQTT state change
-  useEffect(() => {
-    setIsLoading(true);
-    new Promise((resolve) => setTimeout(resolve, MQTT_DEBOUNCE_MS)).then(() => {
-      queryClient
-        .resetQueries({ queryKey: ["dashboardStatus"] })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    });
-  }, [payload]);
 
   const tiles: StatusTileData[] = buildStatusTiles(
     home,
@@ -249,7 +74,7 @@ export function HomeStatusSectionClient() {
     <>
       <AwayAlertModal
         isOpen={showAwayAlert}
-        onClose={() => setShowAwayAlert(false)}
+        onClose={dismissAwayAlert}
         startedAt={awayStartedAt}
       />
       <CardPanel className="p-5 sm:p-6" aria-labelledby="home-status-heading">
@@ -259,17 +84,7 @@ export function HomeStatusSectionClient() {
           headingId="home-status-heading"
           short_description="Live snapshot"
           actions={
-            <HeaderActions
-              isConnected={connected}
-              refetch={() => {
-                setIsLoading(true);
-                queryClient
-                  .resetQueries({ queryKey: ["dashboardStatus"] })
-                  .finally(() => {
-                    setIsLoading(false);
-                  });
-              }}
-            />
+            <HeaderActions isConnected={isConnected} refetch={refetch} />
           }
         />
         <div className="mt-5 flex items-center justify-between gap-3">

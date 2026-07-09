@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, MapPin, Clock, Bell, Power } from "lucide-react";
+import {
+  MoreVertical,
+  MapPin,
+  Clock,
+  Bell,
+  Power,
+  type LucideIcon,
+} from "lucide-react";
 import { CardPanel, IconBubble, StatusBadge, Toggle } from "@/components/ui";
 import {
   ICON_BUBBLE_STYLES,
@@ -24,8 +31,100 @@ export interface DeviceCardProps {
   device: DevicesPageDevice;
 }
 
-export function DeviceCard({ device: initialDevice }: DeviceCardProps) {
-  const [device, setDevice] = useState(initialDevice);
+// ─────────────────────────────────────────────────────────────────────────────
+// Local state — only the two fields that can be toggled optimistically.
+// Keeping these separate from the full device object avoids copying the
+// whole record on every toggle and makes rollback a simple boolean restore.
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface DeviceToggleState {
+  active: boolean;
+  reminder_enabled: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Toggle configuration — declarative description of each toggle row.
+// Rendering from this array replaces the two hand-written `<ToggleRow>` nodes
+// that differed only by icon, label, value, and handler.
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ToggleConfig {
+  icon: LucideIcon;
+  label: string;
+  field: keyof DeviceToggleState;
+  /** Partially-applied server action: `value` already carries the device id. */
+  action: (value: boolean) => Promise<void>;
+}
+
+/**
+ * Builds a toggle config array by partially applying the device id to each
+ * server action. The returned array drives the declarative `<ToggleRow>`
+ * rendering in the component.
+ */
+function buildToggleConfigs(deviceId: string): ToggleConfig[] {
+  return [
+    {
+      icon: Power,
+      label: "Active",
+      field: "active",
+      action: (val: boolean) => toggleDeviceActiveAction(deviceId, val),
+    },
+    {
+      icon: Bell,
+      label: "Reminders",
+      field: "reminder_enabled",
+      action: (val: boolean) => toggleDeviceReminderAction(deviceId, val),
+    },
+  ];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-component: a single labeled toggle
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ToggleRow({
+  icon: Icon,
+  label,
+  enabled,
+  disabled,
+  onChange,
+}: {
+  icon: LucideIcon;
+  label: string;
+  enabled: boolean;
+  disabled?: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2">
+      <Icon
+        className={`size-4 ${
+          enabled
+            ? "text-teal-600 dark:text-teal-400"
+            : "text-slate-400 dark:text-slate-500"
+        }`}
+        strokeWidth={1.8}
+        aria-hidden="true"
+      />
+      <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+        {label}
+      </span>
+      <Toggle enabled={enabled} onChange={onChange} disabled={disabled} />
+    </label>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function DeviceCard({ device }: DeviceCardProps) {
+  // Only the two mutable fields live in state — rollback is a boolean restore
+  // rather than a full-object copy.
+  const [toggleState, setToggleState] = useState<DeviceToggleState>({
+    active: device.active,
+    reminder_enabled: device.reminder_enabled,
+  });
 
   const { trigger: triggerActive, isPending: isPendingActive } =
     useOptimisticToggle((val: boolean) =>
@@ -37,21 +136,40 @@ export function DeviceCard({ device: initialDevice }: DeviceCardProps) {
       toggleDeviceReminderAction(device.id, val),
     );
 
-  function handleToggleActive(value: boolean) {
-    const previous = device;
-    triggerActive(
-      value,
-      () => setDevice((d) => ({ ...d, active: value })),
-      () => setDevice(previous),
-    );
-  }
+  // Map each toggle field to its trigger function + pending flag so the
+  // config array can render a generic `<ToggleRow>` for every field.
+  const fieldToTrigger: Record<
+    keyof DeviceToggleState,
+    {
+      trigger: (
+        value: boolean,
+        optimistic: () => void,
+        revert: () => void,
+      ) => void;
+      isPending: boolean;
+    }
+  > = {
+    active: { trigger: triggerActive, isPending: isPendingActive },
+    reminder_enabled: {
+      trigger: triggerReminder,
+      isPending: isPendingReminder,
+    },
+  };
 
-  function handleToggleReminder(value: boolean) {
-    const previous = device;
-    triggerReminder(
+  function handleToggle(
+    field: keyof DeviceToggleState,
+    trigger: (
+      value: boolean,
+      optimistic: () => void,
+      revert: () => void,
+    ) => void,
+    value: boolean,
+  ) {
+    const previous = toggleState[field];
+    trigger(
       value,
-      () => setDevice((d) => ({ ...d, reminder_enabled: value })),
-      () => setDevice(previous),
+      () => setToggleState((s) => ({ ...s, [field]: value })),
+      () => setToggleState((s) => ({ ...s, [field]: previous })),
     );
   }
 
@@ -64,10 +182,12 @@ export function DeviceCard({ device: initialDevice }: DeviceCardProps) {
           device.expected_safe_state,
         )
       : "Offline";
-  const statusTone = device.active
+  const statusTone = toggleState.active
     ? classificationToTone(deviceClass)
     : "slate";
-  const statusLabel = device.active ? deviceClass : "Disabled";
+  const statusLabel = toggleState.active ? deviceClass : "Disabled";
+
+  const toggleConfigs = buildToggleConfigs(device.id);
 
   return (
     <CardPanel className="group gap-0 p-5" aria-label={`Device ${device.name}`}>
@@ -125,57 +245,22 @@ export function DeviceCard({ device: initialDevice }: DeviceCardProps) {
       {/* ─── Divider ──────────────────────────────────────────────────── */}
       <div className="my-4 h-px bg-slate-100 dark:bg-slate-800" />
 
-      {/* ─── Toggle row ───────────────────────────────────────────────── */}
+      {/* ─── Toggle rows (rendered from the config array) ─────────────── */}
       <div className="flex items-center justify-between gap-4">
-        <ToggleRow
-          icon={Power}
-          label="Active"
-          enabled={device.active}
-          disabled={isPendingActive}
-          onChange={handleToggleActive}
-        />
-        <ToggleRow
-          icon={Bell}
-          label="Reminders"
-          enabled={device.reminder_enabled}
-          disabled={isPendingReminder}
-          onChange={handleToggleReminder}
-        />
+        {toggleConfigs.map((cfg) => {
+          const { trigger, isPending } = fieldToTrigger[cfg.field];
+          return (
+            <ToggleRow
+              key={cfg.label}
+              icon={cfg.icon}
+              label={cfg.label}
+              enabled={toggleState[cfg.field]}
+              disabled={isPending}
+              onChange={(value) => handleToggle(cfg.field, trigger, value)}
+            />
+          );
+        })}
       </div>
     </CardPanel>
-  );
-}
-
-// ─── Sub-component: a single labeled toggle ─────────────────────────────────
-
-function ToggleRow({
-  icon: Icon,
-  label,
-  enabled,
-  disabled,
-  onChange,
-}: {
-  icon: typeof Power;
-  label: string;
-  enabled: boolean;
-  disabled?: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label className="flex cursor-pointer items-center gap-2">
-      <Icon
-        className={`size-4 ${
-          enabled
-            ? "text-teal-600 dark:text-teal-400"
-            : "text-slate-400 dark:text-slate-500"
-        }`}
-        strokeWidth={1.8}
-        aria-hidden="true"
-      />
-      <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-        {label}
-      </span>
-      <Toggle enabled={enabled} onChange={onChange} disabled={disabled} />
-    </label>
   );
 }

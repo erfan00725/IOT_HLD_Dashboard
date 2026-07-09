@@ -83,10 +83,18 @@ export function categoryToTone(category?: string): ToneColor {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Device icon name used in AutomationRules
+// Device icon name (string) used by the AutomationRules component
+//
+// NOTE: This helper intentionally returns the icon *name* (a string), not a
+// LucideIcon component — it matches the `AutomationRule["icon"]` type so the
+// AutomationRules UI can dynamically render the correct icon by name.
+//
+// The sibling `categoryToIcon` in `device-icons.ts` returns a LucideIcon
+// component for direct rendering in reminder/event rows and is a different
+// concern, hence the distinct name here.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function categoryToIcon(category?: string): AutomationRule["icon"] {
+export function categoryToIconName(category?: string): AutomationRule["icon"] {
   switch (category) {
     case "lighting":
       return "lightbulb";
@@ -109,7 +117,7 @@ export function mapRuleToAutomation(row: RulesAutomationType): AutomationRule {
   return {
     id: row.id,
     name: row.reminder_text,
-    icon: categoryToIcon(row.devices?.category || undefined),
+    icon: categoryToIconName(row.devices?.category || undefined),
     iconColor: categoryToTone(row.devices?.category || undefined),
     trigger: `Presence: ${row.trigger_presence_state}`,
     condition: `Device state = ${row.trigger_device_state}`,
