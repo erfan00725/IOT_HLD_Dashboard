@@ -10,3 +10,4 @@ export { PriorityBadge } from "./priority-badge";
 export { AwayAlertModal } from "./away-alert-modal";
 export { QueryStateWrapper } from "./query-state-wrapper";
 export { SummaryPanel, type SummaryTileData } from "./summary-panel";
+export { ReminderRow, type ReminderDisplayRow } from "./reminder-row";

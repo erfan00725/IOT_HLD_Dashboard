@@ -1,54 +1,16 @@
 "use client";
-import { Bell, type LucideIcon } from "lucide-react";
+import { Bell } from "lucide-react";
 import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
-import { IconBubble } from "@/components/ui/icon-bubble";
-import { ICON_BUBBLE_STYLES, type Priority } from "@/lib/utils/tone-styles";
 import { categoryToIcon } from "@/lib/utils/device-icons";
 import { QueryStateWrapper } from "@/components/ui/query-state-wrapper";
-import { PriorityBadge } from "@/components/ui/priority-badge";
+import {
+  ReminderRow,
+  type ReminderDisplayRow,
+} from "@/components/ui/reminder-row";
 import { useQuery } from "@tanstack/react-query";
 import { fetchActiveReminders } from "@/lib/api/dashboard";
-import {
-  severityToPriority,
-  categoryToTone,
-  formatTime,
-} from "@/lib/utils/dashboard-mappers";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface ReminderDisplayRow {
-  icon: LucideIcon;
-  title: string;
-  sub: string;
-  time: string;
-  priority: Priority;
-}
-
-// ─── Single reminder row ──────────────────────────────────────────────────────
-
-function ReminderRow({ icon, title, sub, time, priority }: ReminderDisplayRow) {
-  const tone = "teal";
-  return (
-    <li className="flex items-center gap-3">
-      <IconBubble icon={icon} colorClass={ICON_BUBBLE_STYLES[tone]} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold max-w-full text-slate-800 dark:text-slate-200">
-          {title}
-        </p>
-        <p className="truncate text-xs text-slate-400 dark:text-slate-500">
-          {sub}
-        </p>
-      </div>
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        <span className="text-xs text-slate-400 dark:text-slate-500">
-          {time}
-        </span>
-        <PriorityBadge priority={priority} />
-      </div>
-    </li>
-  );
-}
+import { severityToPriority, formatTime } from "@/lib/utils/dashboard-mappers";
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 

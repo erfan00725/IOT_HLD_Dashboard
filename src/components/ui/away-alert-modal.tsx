@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Bell, PersonStanding, X, type LucideIcon } from "lucide-react";
+import { Bell, PersonStanding, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchActiveReminders,
@@ -12,13 +12,11 @@ import {
   categoryToTone,
   formatTime,
 } from "@/lib/utils/dashboard-mappers";
-import {
-  ICON_BUBBLE_STYLES,
-  type Priority,
-  type ToneColor,
-} from "@/lib/utils/tone-styles";
 import { categoryToIcon } from "@/lib/utils/device-icons";
-import { PriorityBadge } from "@/components/ui/priority-badge";
+import {
+  ReminderRow,
+  type ReminderDisplayRow,
+} from "@/components/ui/reminder-row";
 
 interface AwayAlertModalProps {
   /** Whether the modal should be visible */
@@ -27,17 +25,6 @@ interface AwayAlertModalProps {
   onClose: () => void;
   /** ISO timestamp of when the away session started */
   startedAt?: string | null;
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface ReminderDisplayRow {
-  icon: LucideIcon;
-  title: string;
-  sub: string;
-  time: string;
-  priority: Priority;
-  tone: ToneColor;
 }
 
 /** Maps a raw reminder rule row into the display shape used by the modal. */
@@ -76,35 +63,6 @@ function playBeep() {
   } catch {
     // AudioContext not supported — fail silently
   }
-}
-
-// ─── Single reminder row (compact version for the modal) ───────────────────────
-
-function ModalReminderRow({ row }: { row: ReminderDisplayRow }) {
-  const Icon = row.icon;
-  return (
-    <li className="flex items-center gap-3">
-      <div
-        className={`grid size-8 shrink-0 place-items-center rounded-lg ${ICON_BUBBLE_STYLES[row.tone]}`}
-      >
-        <Icon className="size-4" strokeWidth={1.8} aria-hidden="true" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
-          {row.title}
-        </p>
-        <p className="truncate text-xs text-slate-400 dark:text-slate-500">
-          {row.sub}
-        </p>
-      </div>
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        <span className="text-xs text-slate-400 dark:text-slate-500">
-          {row.time}
-        </span>
-        <PriorityBadge priority={row.priority} />
-      </div>
-    </li>
-  );
 }
 
 /**
@@ -237,7 +195,7 @@ export function AwayAlertModal({
                 </li>
               ) : (
                 reminders.map((r) => (
-                  <ModalReminderRow key={`${r.title}-${r.sub}`} row={r} />
+                  <ReminderRow key={`${r.title}-${r.sub}`} {...r} />
                 ))
               )}
             </ul>
