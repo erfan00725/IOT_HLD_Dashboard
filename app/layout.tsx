@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/context/theme-context";
+import { DashboardStatusProvider } from "@/context/dashboard-status-context";
 import { ReactQueryProvider } from "@/components/layout/react-query-provider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -23,7 +24,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider>
-          <ReactQueryProvider>{children}</ReactQueryProvider>
+          <ReactQueryProvider>
+            <DashboardStatusProvider>{children}</DashboardStatusProvider>
+          </ReactQueryProvider>
           <ToastContainer />
         </ThemeProvider>
       </body>

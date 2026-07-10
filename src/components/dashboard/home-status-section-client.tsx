@@ -3,8 +3,8 @@
 import { Home, RefreshCw, Wifi } from "lucide-react";
 import { CardPanel, PanelHeader, StatusTile, AwayAlertModal } from "../ui";
 import { buildStatusTiles } from "@/lib/utils/dashboard-tiles";
-import { useDashboardStatusRefresh } from "@/hooks/useDashboardStatusRefresh";
 import type { StatusTileData } from "@/lib/types/dashboard";
+import { useDashboardStatus } from "@/context/dashboard-status-context";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Header actions (connection status + refresh button)
@@ -57,7 +57,7 @@ export function HomeStatusSectionClient() {
     showAwayAlert,
     awayStartedAt,
     dismissAwayAlert,
-  } = useDashboardStatusRefresh();
+  } = useDashboardStatus();
 
   const home = data?.home;
   const deviceStates = data?.deviceStates ?? [];

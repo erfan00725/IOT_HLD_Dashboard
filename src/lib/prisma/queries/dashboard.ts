@@ -65,6 +65,8 @@ export async function getActiveLeaveSessionForDashboard(homeId: string) {
  *   devices: { name, category }, created_at }[]`
  */
 export async function getActiveReminderRulesForDashboard(homeId: string) {
+  const devices_states = await getDashboardDeviceStates(homeId);
+
   const rules = await prisma.reminder_rules.findMany({
     where: { home_id: homeId, active: true },
     orderBy: { severity: "desc" },
@@ -72,7 +74,16 @@ export async function getActiveReminderRulesForDashboard(homeId: string) {
     include: { devices: true },
   });
 
-  return rules.map((rule) => ({
+  const validRules = rules.filter((rule) => {
+    const matchingDevice = devices_states.find(
+      (device) => device.device_external_key === rule.device_external_key,
+    );
+    if (!matchingDevice) return false;
+    if (rule.trigger_device_state !== matchingDevice.state_value) return false;
+    return matchingDevice;
+  });
+
+  return validRules.map((rule) => ({
     id: rule.id,
     reminder_text: rule.reminder_text,
     severity: rule.severity,

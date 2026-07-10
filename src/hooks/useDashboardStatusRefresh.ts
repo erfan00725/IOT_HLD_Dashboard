@@ -11,7 +11,7 @@ import type { ActiveSession } from "@/lib/types/dashboard";
 const MQTT_DEBOUNCE_MS = 4_000;
 
 /** The shape returned by the hook — everything the component needs to render. */
-interface DashboardStatusRefresh {
+export interface DashboardStatusRefresh {
   /** Combined loading flag: true while the query *or* a debounced refetch is in flight. */
   isLoading: boolean;
   /** Error from React Query, if any. */
@@ -70,6 +70,8 @@ export function useDashboardStatusRefresh(): DashboardStatusRefresh {
 
   const activeSession: ActiveSession = data?.activeSession ?? null;
   const prevActiveSessionRef = useRef<ActiveSession>(activeSession);
+
+  console.log(data);
 
   // Detect the home → away transition (activeSession goes null → present).
   useEffect(() => {
