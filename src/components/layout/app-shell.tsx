@@ -8,7 +8,7 @@ import {
 import type { FC, ReactNode } from "react";
 import { headers } from "next/headers";
 import { DarkModeToggle } from "@/components/layout/dark-mode-toggle";
-import { getMyProfile } from "@/lib/prisma/queries/profiles";
+import { getMyUser } from "@/lib/prisma/queries/user";
 import {
   getDashboardDeviceStates,
   getFirstHome,
@@ -20,7 +20,7 @@ import {
 } from "@/lib/utils/device-health";
 import Navbar from "./sidebar/Navbar";
 
-type Profile = Awaited<ReturnType<typeof getMyProfile>>;
+type Profile = Awaited<ReturnType<typeof getMyUser>>;
 
 // ---------------------------------------------------------------------------
 // Brand logo
@@ -149,7 +149,7 @@ function Sidebar({
 // User menu button
 // ---------------------------------------------------------------------------
 function UserMenu({ profile }: { profile: Profile | null }) {
-  const displayName = profile?.display_name?.trim() || "Guest";
+  const displayName = profile?.full_name?.trim() || "Guest";
   const initials = deriveInitials(profile);
   return (
     <button
@@ -173,9 +173,9 @@ function UserMenu({ profile }: { profile: Profile | null }) {
   );
 }
 
-/** Returns up to two uppercase initials from display_name, or "?" as fallback. */
+/** Returns up to two uppercase initials from full_name, or "?" as fallback. */
 function deriveInitials(profile: Profile | null): string {
-  const name = profile?.display_name?.trim();
+  const name = profile?.full_name?.trim();
   if (!name) return "?";
   const parts = name.split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -255,9 +255,9 @@ export async function AppShell({
 }: AppShellProps) {
   // Profile lookup may fail for an authenticated user that has no profile row
   // yet — fall back to a guest identity rather than crashing the whole shell.
-  let profile: Awaited<ReturnType<typeof getMyProfile>> | null = null;
+  let profile: Awaited<ReturnType<typeof getMyUser>> | null = null;
   try {
-    profile = await getMyProfile();
+    profile = await getMyUser();
   } catch {
     profile = null;
   }

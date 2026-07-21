@@ -6,30 +6,24 @@
  */
 
 import { DashboardDeviceStateType } from "../types/customeTypes";
-import { Database } from "../types/database.types";
-
-// Shape returned by `getDashboardDeviceStates` in `queries/dashboard.ts`.
-export interface DeviceStateEntry {
-  state_value: string;
-  devices: {
-    expected_safe_state: string;
-    active: boolean;
-  };
-}
 
 export type DeviceClass = "Online" | "Warning" | "Offline";
 
-/** A device is considered online when its state matches expected_safe_state. */
+/**
+ * Classifies a device from its latest reported state.
+ *
+ * - No state reported yet → Offline.
+ * - State is the device type's safe state → Online.
+ * - State is a non-safe (attention) state → Warning.
+ *
+ * `isSafeState` comes from the joined `device_type_states.is_safe_state`.
+ */
 export function classifyDevice(
-  stateValue: Database["public"]["Enums"]["device_status"],
-  expectedSafeState?: string,
+  stateKey?: string | null,
+  isSafeState?: boolean | null,
 ): DeviceClass {
-  const v = stateValue?.toLowerCase() ?? "";
-  // If state matches the expected safe state → online
-  if (v === expectedSafeState?.toLowerCase()) return "Online";
-  // Explicit offline markers
-  if (v === "off") return "Offline";
-  // Otherwise it's active but in an unsafe state → warning
+  if (!stateKey) return "Offline";
+  if (isSafeState) return "Online";
   return "Warning";
 }
 
@@ -65,7 +59,7 @@ export function summarizeDeviceHealth(
 
   const counts = { Online: 0, Warning: 0, Offline: 0 };
   for (const s of active) {
-    counts[classifyDevice(s.state_value, s.devices?.expected_safe_state)]++;
+    counts[classifyDevice(s.state_key, s.is_safe_state)]++;
   }
 
   let status: SystemHealthStatus = "secure";

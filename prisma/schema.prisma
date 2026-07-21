@@ -22,12 +22,6 @@ model audit_log_entries {
   @@schema("auth")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
-// model custom_oauth_providers {
-// @@schema("auth")
-// }
-
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model flow_state {
@@ -145,30 +139,6 @@ model mfa_factors {
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
-// model oauth_authorizations {
-// @@schema("auth")
-// }
-
-/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-// model oauth_client_states {
-// @@schema("auth")
-// }
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
-// model oauth_clients {
-// @@schema("auth")
-// }
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
-// model oauth_consents {
-// @@schema("auth")
-// }
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model one_time_tokens {
   id         String              @id @db.Uuid
@@ -277,6 +247,7 @@ model sessions {
   scopes                 String?
   mfa_amr_claims         mfa_amr_claims[]
   refresh_tokens         refresh_tokens[]
+  oauth_clients          oauth_clients?   @relation(fields: [oauth_client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users                  users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([not_after(sort: Desc)])
@@ -325,46 +296,49 @@ model sso_providers {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model users {
-  instance_id                 String?           @db.Uuid
-  id                          String            @id @db.Uuid
-  aud                         String?           @db.VarChar(255)
-  role                        String?           @db.VarChar(255)
-  email                       String?           @unique(map: "users_email_partial_key", where: raw("(is_sso_user = false)")) @db.VarChar(255)
-  encrypted_password          String?           @db.VarChar(255)
-  email_confirmed_at          DateTime?         @db.Timestamptz(6)
-  invited_at                  DateTime?         @db.Timestamptz(6)
-  confirmation_token          String?           @unique(map: "confirmation_token_idx", where: raw("((confirmation_token)::text !~ '^[0-9 ]*$'::text)")) @db.VarChar(255)
-  confirmation_sent_at        DateTime?         @db.Timestamptz(6)
-  recovery_token              String?           @unique(map: "recovery_token_idx", where: raw("((recovery_token)::text !~ '^[0-9 ]*$'::text)")) @db.VarChar(255)
-  recovery_sent_at            DateTime?         @db.Timestamptz(6)
-  email_change_token_new      String?           @unique(map: "email_change_token_new_idx", where: raw("((email_change_token_new)::text !~ '^[0-9 ]*$'::text)")) @db.VarChar(255)
-  email_change                String?           @db.VarChar(255)
-  email_change_sent_at        DateTime?         @db.Timestamptz(6)
-  last_sign_in_at             DateTime?         @db.Timestamptz(6)
+  instance_id                 String?                @db.Uuid
+  id                          String                 @id @db.Uuid
+  aud                         String?                @db.VarChar(255)
+  role                        String?                @db.VarChar(255)
+  email                       String?                @unique(map: "users_email_partial_key", where: raw("(is_sso_user = false)")) @db.VarChar(255)
+  encrypted_password          String?                @db.VarChar(255)
+  email_confirmed_at          DateTime?              @db.Timestamptz(6)
+  invited_at                  DateTime?              @db.Timestamptz(6)
+  confirmation_token          String?                @unique(map: "confirmation_token_idx", where: raw("((confirmation_token)::text !~ '^[0-9 ]*$'::text)")) @db.VarChar(255)
+  confirmation_sent_at        DateTime?              @db.Timestamptz(6)
+  recovery_token              String?                @unique(map: "recovery_token_idx", where: raw("((recovery_token)::text !~ '^[0-9 ]*$'::text)")) @db.VarChar(255)
+  recovery_sent_at            DateTime?              @db.Timestamptz(6)
+  email_change_token_new      String?                @unique(map: "email_change_token_new_idx", where: raw("((email_change_token_new)::text !~ '^[0-9 ]*$'::text)")) @db.VarChar(255)
+  email_change                String?                @db.VarChar(255)
+  email_change_sent_at        DateTime?              @db.Timestamptz(6)
+  last_sign_in_at             DateTime?              @db.Timestamptz(6)
   raw_app_meta_data           Json?
   raw_user_meta_data          Json?
   is_super_admin              Boolean?
-  created_at                  DateTime?         @db.Timestamptz(6)
-  updated_at                  DateTime?         @db.Timestamptz(6)
-  phone                       String?           @unique
-  phone_confirmed_at          DateTime?         @db.Timestamptz(6)
-  phone_change                String?           @default("")
-  phone_change_token          String?           @default("") @db.VarChar(255)
-  phone_change_sent_at        DateTime?         @db.Timestamptz(6)
-  confirmed_at                DateTime?         @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
-  email_change_token_current  String?           @unique(map: "email_change_token_current_idx", where: raw("((email_change_token_current)::text !~ '^[0-9 ]*$'::text)")) @default("") @db.VarChar(255)
-  email_change_confirm_status Int?              @default(0) @db.SmallInt
-  banned_until                DateTime?         @db.Timestamptz(6)
-  reauthentication_token      String?           @unique(map: "reauthentication_token_idx", where: raw("((reauthentication_token)::text !~ '^[0-9 ]*$'::text)")) @default("") @db.VarChar(255)
-  reauthentication_sent_at    DateTime?         @db.Timestamptz(6)
-  is_sso_user                 Boolean           @default(false)
-  deleted_at                  DateTime?         @db.Timestamptz(6)
-  is_anonymous                Boolean           @default(false)
+  created_at                  DateTime?              @db.Timestamptz(6)
+  updated_at                  DateTime?              @db.Timestamptz(6)
+  phone                       String?                @unique
+  phone_confirmed_at          DateTime?              @db.Timestamptz(6)
+  phone_change                String?                @default("")
+  phone_change_token          String?                @default("") @db.VarChar(255)
+  phone_change_sent_at        DateTime?              @db.Timestamptz(6)
+  confirmed_at                DateTime?              @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
+  email_change_token_current  String?                @unique(map: "email_change_token_current_idx", where: raw("((email_change_token_current)::text !~ '^[0-9 ]*$'::text)")) @default("") @db.VarChar(255)
+  email_change_confirm_status Int?                   @default(0) @db.SmallInt
+  banned_until                DateTime?              @db.Timestamptz(6)
+  reauthentication_token      String?                @unique(map: "reauthentication_token_idx", where: raw("((reauthentication_token)::text !~ '^[0-9 ]*$'::text)")) @default("") @db.VarChar(255)
+  reauthentication_sent_at    DateTime?              @db.Timestamptz(6)
+  is_sso_user                 Boolean                @default(false)
+  deleted_at                  DateTime?              @db.Timestamptz(6)
+  is_anonymous                Boolean                @default(false)
   identities                  identities[]
   mfa_factors                 mfa_factors[]
+  oauth_authorizations        oauth_authorizations[]
+  oauth_consents              oauth_consents[]
   one_time_tokens             one_time_tokens[]
   sessions                    sessions[]
-  profiles                    profiles?
+  webauthn_challenges         webauthn_challenges[]
+  webauthn_credentials        webauthn_credentials[]
   user                        user?
 
   @@index([created_at(sort: Desc)], map: "idx_users_created_at_desc")
@@ -375,107 +349,79 @@ model users {
   @@schema("auth")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
-// model webauthn_challenges {
-// @@schema("auth")
-// }
-
-/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
-// model webauthn_credentials {
-// @@schema("auth")
-// }
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model Test {
-  id         BigInt   @id @default(autoincrement())
-  text       String?
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  @@schema("public")
-}
-
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model device_latest_states {
-  device_external_key String        @id
-  home_id             String        @db.Uuid
-  room_id             String?       @db.Uuid
-  state_value         device_status @default(off)
-  state_payload       Json          @default("{}")
-  source              String        @default("node-red")
-  last_seen_at        DateTime      @default(now()) @db.Timestamptz(6)
-  created_at          DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime      @default(now()) @db.Timestamptz(6)
-  devices             devices       @relation(fields: [device_external_key], references: [external_key], onDelete: Cascade, onUpdate: NoAction)
-  homes               homes         @relation(fields: [home_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  rooms               rooms?        @relation(fields: [room_id], references: [id], onUpdate: NoAction)
+  source               String             @default("node-red")
+  last_seen_at         DateTime           @default(now()) @db.Timestamptz(6)
+  created_at           DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime           @default(now()) @db.Timestamptz(6)
+  device_id            String             @id @db.Uuid
+  device_type_state_id BigInt
+  devices              devices            @relation(fields: [device_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  device_type_states   device_type_states @relation(fields: [device_type_state_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@index([home_id], map: "idx_device_latest_states_home_id")
   @@schema("public")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model device_state_events {
-  id                  BigInt   @id @default(autoincrement())
-  device_external_key String
-  home_id             String   @db.Uuid
-  room_id             String?  @db.Uuid
-  mqtt_topic          String?
-  state_value         String
-  payload             Json     @default("{}")
-  source              String   @default("node-red")
-  observed_at         DateTime @default(now()) @db.Timestamptz(6)
-  created_at          DateTime @default(now()) @db.Timestamptz(6)
-  devices             devices  @relation(fields: [device_external_key], references: [external_key], onDelete: Cascade, onUpdate: NoAction)
-  homes               homes    @relation(fields: [home_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  rooms               rooms?   @relation(fields: [room_id], references: [id], onUpdate: NoAction)
+  id                   BigInt             @id @default(autoincrement())
+  mqtt_topic           String?
+  payload              Json               @default("{}")
+  source               String             @default("node-red")
+  observed_at          DateTime           @default(now()) @db.Timestamptz(6)
+  created_at           DateTime           @default(now()) @db.Timestamptz(6)
+  device_id            String             @db.Uuid
+  device_type_state_id BigInt
+  devices              devices            @relation(fields: [device_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  device_type_states   device_type_states @relation(fields: [device_type_state_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@index([device_external_key], map: "idx_device_state_events_device_key")
-  @@index([home_id], map: "idx_device_state_events_home_id")
+  @@index([device_id, observed_at(sort: Desc)])
   @@schema("public")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model devices {
-  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  home_id              String                @db.Uuid
-  room_id              String?               @db.Uuid
-  external_key         String                @unique
-  name                 String
-  category             device_category
-  expected_safe_state  device_status         @default(on)
-  reminder_enabled     Boolean               @default(true)
-  active               Boolean               @default(true)
-  metadata             Json                  @default("{}")
-  created_at           DateTime              @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime              @default(now()) @db.Timestamptz(6)
-  device_latest_states device_latest_states?
-  device_state_events  device_state_events[]
-  homes                homes                 @relation(fields: [home_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  rooms                rooms?                @relation(fields: [room_id], references: [id], onUpdate: NoAction)
-  reminder_rules       reminder_rules[]
+  id                        String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  home_id                   String                @db.Uuid
+  room_id                   String?               @db.Uuid
+  external_key              String                @unique
+  name                      String
+  reminder_enabled          Boolean               @default(true)
+  active                    Boolean               @default(true)
+  metadata                  Json                  @default("{}")
+  created_at                DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime              @default(now()) @db.Timestamptz(6)
+  device_type_id            String
+  safe_device_type_state_id BigInt?
+  device_latest_states      device_latest_states?
+  device_state_events       device_state_events[]
+  device_types              device_types          @relation(fields: [device_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  homes                     homes                 @relation(fields: [home_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  rooms                     rooms?                @relation(fields: [room_id], references: [id], onUpdate: NoAction)
+  device_type_states        device_type_states?   @relation(fields: [safe_device_type_state_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reminder_rules            reminder_rules[]
 
   @@index([home_id], map: "idx_devices_home_id")
   @@index([room_id], map: "idx_devices_room_id")
+  @@index([home_id])
+  @@index([room_id])
   @@schema("public")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model homes {
-  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  owner_id             String                 @db.Uuid
-  name                 String
-  slug                 String                 @unique
-  created_at           DateTime               @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
-  device_latest_states device_latest_states[]
-  device_state_events  device_state_events[]
-  devices              devices[]
-  profiles             profiles               @relation(fields: [owner_id], references: [id], onDelete: Cascade)
-  leave_sessions       leave_sessions[]
-  reminder_events      reminder_events[]
-  reminder_rules       reminder_rules[]
-  rooms                rooms[]
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  owner_id        String            @db.Uuid
+  name            String
+  slug            String            @unique
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime          @default(now()) @db.Timestamptz(6)
+  devices         devices[]
+  profiles        user              @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  leave_sessions  leave_sessions[]
+  reminder_events reminder_events[]
+  rooms           rooms[]
 
   @@schema("public")
 }
@@ -490,23 +436,10 @@ model leave_sessions {
   metadata        Json              @default("{}")
   created_at      DateTime          @default(now()) @db.Timestamptz(6)
   homes           homes             @relation(fields: [home_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  profiles        profiles          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles        user              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   reminder_events reminder_events[]
 
   @@index([home_id], map: "idx_leave_sessions_home_id")
-  @@schema("public")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model profiles {
-  id             String           @id @db.Uuid
-  display_name   String?
-  created_at     DateTime         @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime         @default(now()) @db.Timestamptz(6)
-  homes          homes[]
-  leave_sessions leave_sessions[]
-  users          users            @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
   @@schema("public")
 }
 
@@ -532,38 +465,35 @@ model reminder_events {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model reminder_rules {
-  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  home_id                String   @db.Uuid
-  device_external_key    String
-  trigger_presence_state String   @default("left")
-  trigger_device_state   String
-  reminder_text          String
-  severity               Int      @default(1) @db.SmallInt
-  active                 Boolean  @default(true)
-  created_at             DateTime @default(now()) @db.Timestamptz(6)
-  updated_at             DateTime @default(now()) @db.Timestamptz(6)
-  devices                devices  @relation(fields: [device_external_key], references: [external_key], onDelete: Cascade, onUpdate: NoAction)
-  homes                  homes    @relation(fields: [home_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trigger_presence_state       String             @default("left")
+  reminder_text                String
+  severity                     Int                @default(1) @db.SmallInt
+  active                       Boolean            @default(true)
+  created_at                   DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime           @default(now()) @db.Timestamptz(6)
+  device_id                    String             @db.Uuid
+  trigger_device_type_state_id BigInt
+  devices                      devices            @relation(fields: [device_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  device_type_states           device_type_states @relation(fields: [trigger_device_type_state_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([home_id, device_external_key, trigger_presence_state, trigger_device_state])
-  @@index([home_id], map: "idx_reminder_rules_home_id")
+  @@unique([device_id, trigger_device_type_state_id])
+  @@index([device_id])
   @@schema("public")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model rooms {
-  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  home_id              String                 @db.Uuid
-  name                 String
-  code                 String
-  floor_label          String?
-  sort_order           Int                    @default(0)
-  created_at           DateTime               @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
-  device_latest_states device_latest_states[]
-  device_state_events  device_state_events[]
-  devices              devices[]
-  homes                homes                  @relation(fields: [home_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  home_id     String    @db.Uuid
+  name        String
+  code        String
+  floor_label String?
+  sort_order  Int       @default(0)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @default(now()) @db.Timestamptz(6)
+  devices     devices[]
+  homes       homes     @relation(fields: [home_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([home_id, code])
   @@index([home_id], map: "idx_rooms_home_id")
@@ -573,16 +503,194 @@ model rooms {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model user {
-  id         String   @id @db.Uuid
-  username   String?  @unique
-  full_name  String?
-  email      String?  @unique
-  avatar_url String?
-  role       String   @default("member")
-  is_active  Boolean  @default(true)
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
-  users      users    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id             String           @id @db.Uuid
+  username       String?          @unique
+  full_name      String?
+  email          String?          @unique
+  avatar_url     String?
+  role           String           @default("member")
+  is_active      Boolean          @default(true)
+  created_at     DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime         @default(now()) @db.Timestamptz(6)
+  homes          homes[]
+  leave_sessions leave_sessions[]
+  users          users            @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model custom_oauth_providers {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_type           String
+  identifier              String    @unique
+  name                    String
+  client_id               String
+  client_secret           String
+  acceptable_client_ids   String[]  @default([])
+  scopes                  String[]  @default([])
+  pkce_enabled            Boolean   @default(true)
+  attribute_mapping       Json      @default("{}")
+  authorization_params    Json      @default("{}")
+  enabled                 Boolean   @default(true)
+  email_optional          Boolean   @default(false)
+  issuer                  String?
+  discovery_url           String?
+  skip_nonce_check        Boolean   @default(false)
+  cached_discovery        Json?
+  discovery_cached_at     DateTime? @db.Timestamptz(6)
+  authorization_url       String?
+  token_url               String?
+  userinfo_url            String?
+  jwks_uri                String?
+  created_at              DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime  @default(now()) @db.Timestamptz(6)
+  custom_claims_allowlist String[]  @default([])
+
+  @@index([created_at])
+  @@index([enabled])
+  @@index([identifier])
+  @@index([provider_type])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_authorizations {
+  id                    String                     @id @db.Uuid
+  authorization_id      String                     @unique
+  client_id             String                     @db.Uuid
+  user_id               String?                    @db.Uuid
+  redirect_uri          String
+  scope                 String
+  state                 String?
+  resource              String?
+  code_challenge        String?
+  code_challenge_method code_challenge_method?
+  response_type         oauth_response_type        @default(code)
+  status                oauth_authorization_status @default(pending)
+  authorization_code    String?                    @unique
+  created_at            DateTime                   @default(now()) @db.Timestamptz(6)
+  expires_at            DateTime                   @default(dbgenerated("(now() + '00:03:00'::interval)")) @db.Timestamptz(6)
+  approved_at           DateTime?                  @db.Timestamptz(6)
+  nonce                 String?
+  oauth_clients         oauth_clients              @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                 users?                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([expires_at], map: "oauth_auth_pending_exp_idx", where: raw("(status = 'pending'::auth.oauth_authorization_status)"))
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model oauth_client_states {
+  id            String   @id @db.Uuid
+  provider_type String
+  code_verifier String?
+  created_at    DateTime @db.Timestamptz(6)
+
+  @@index([created_at], map: "idx_oauth_client_states_created_at")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_clients {
+  id                         String                  @id @db.Uuid
+  client_secret_hash         String?
+  registration_type          oauth_registration_type
+  redirect_uris              String
+  grant_types                String
+  client_name                String?
+  client_uri                 String?
+  logo_uri                   String?
+  created_at                 DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime                @default(now()) @db.Timestamptz(6)
+  deleted_at                 DateTime?               @db.Timestamptz(6)
+  client_type                oauth_client_type       @default(confidential)
+  token_endpoint_auth_method String
+  oauth_authorizations       oauth_authorizations[]
+  oauth_consents             oauth_consents[]
+  sessions                   sessions[]
+
+  @@index([deleted_at])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_consents {
+  id            String        @id @db.Uuid
+  user_id       String        @db.Uuid
+  client_id     String        @db.Uuid
+  scopes        String
+  granted_at    DateTime      @default(now()) @db.Timestamptz(6)
+  revoked_at    DateTime?     @db.Timestamptz(6)
+  oauth_clients oauth_clients @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, client_id], map: "oauth_consents_user_client_unique")
+  @@index([client_id], map: "oauth_consents_active_client_idx", where: raw("(revoked_at IS NULL)"))
+  @@index([user_id, client_id], map: "oauth_consents_active_user_client_idx", where: raw("(revoked_at IS NULL)"))
+  @@index([user_id, granted_at(sort: Desc)], map: "oauth_consents_user_order_idx")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model webauthn_challenges {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String?  @db.Uuid
+  challenge_type String
+  session_data   Json
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  expires_at     DateTime @db.Timestamptz(6)
+  users          users?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([expires_at])
+  @@index([user_id])
+  @@schema("auth")
+}
+
+model webauthn_credentials {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String    @db.Uuid
+  credential_id    Bytes     @unique
+  public_key       Bytes
+  attestation_type String    @default("")
+  aaguid           String?   @db.Uuid
+  sign_count       BigInt    @default(0)
+  transports       Json      @default("[]")
+  backup_eligible  Boolean   @default(false)
+  backed_up        Boolean   @default(false)
+  friendly_name    String    @default("")
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+  last_used_at     DateTime? @db.Timestamptz(6)
+  users            users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id])
+  @@schema("auth")
+}
+
+model device_type_states {
+  id                   BigInt                 @id @default(autoincrement())
+  device_type_id       String
+  state_key            String
+  label                String
+  is_safe_state        Boolean?               @default(false)
+  device_latest_states device_latest_states[]
+  device_state_events  device_state_events[]
+  device_types         device_types           @relation(fields: [device_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  devices              devices[]
+  reminder_rules       reminder_rules[]
+
+  @@unique([device_type_id, state_key])
+  @@schema("public")
+}
+
+model device_types {
+  id                 String               @id
+  label              String
+  icon               String
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  device_type_states device_type_states[]
+  devices            devices[]
 
   @@schema("public")
 }

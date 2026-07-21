@@ -56,7 +56,7 @@ function computeSummary(events: EventsPageEvent[]) {
   for (const e of events) {
     if (isToday(e.observed_at)) today += 1;
     dayKeys.add(e.observed_at.slice(0, 10));
-    if (eventStateToTone(e.state_value) !== "teal") alerts += 1;
+    if (eventStateToTone(e.state_key) !== "teal") alerts += 1;
   }
 
   return { total: events.length, today, activeDays: dayKeys.size, alerts };

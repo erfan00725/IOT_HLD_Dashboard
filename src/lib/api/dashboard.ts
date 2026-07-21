@@ -3,15 +3,16 @@ import { apiClient } from "./client";
 export interface DashboardStatusResponse {
   home: { id: string; name: string; slug: string } | null;
   deviceStates: Array<{
-    device_external_key: string;
-    state_value: string;
+    external_key: string;
+    state_key: string | null;
+    is_safe_state: boolean | null;
     last_seen_at: string;
     devices: {
       name: string;
-      category: string;
-      expected_safe_state: string;
+      device_type_id: string;
+      device_type_label: string;
       active: boolean;
-    } | null;
+    };
   }>;
   activeSession: {
     id: string;
@@ -24,17 +25,25 @@ export interface ActiveReminderRule {
   id: string;
   reminder_text: string;
   severity: number;
-  device_external_key: string;
-  devices: { name: string; category: string } | null;
+  external_key: string;
+  devices: {
+    name: string;
+    device_type_id: string;
+    device_type_label: string;
+  } | null;
   created_at: string;
 }
 
 export interface RecentLeaveEvent {
   id: number;
-  device_external_key: string;
-  state_value: string;
+  external_key: string;
+  state_key: string | null;
   observed_at: string;
-  devices: { name: string; category: string } | null;
+  devices: {
+    name: string;
+    device_type_id: string;
+    device_type_label: string;
+  } | null;
 }
 
 export function fetchDashboardStatus() {

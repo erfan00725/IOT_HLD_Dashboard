@@ -2,7 +2,7 @@
 import { Bell } from "lucide-react";
 import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
-import { categoryToIcon } from "@/lib/utils/device-icons";
+import { deviceTypeToIconOr } from "@/lib/utils/device-icons";
 import { QueryStateWrapper } from "@/components/ui/query-state-wrapper";
 import {
   ReminderRow,
@@ -37,7 +37,7 @@ export function ActiveReminders() {
   });
 
   const reminders: ReminderDisplayRow[] = rawRules.map((rule) => ({
-    icon: categoryToIcon(rule.devices?.category),
+    icon: deviceTypeToIconOr(rule.devices?.device_type_id),
     title: rule.reminder_text,
     sub: rule.devices?.name || "_",
     time: formatTime(rule.created_at ?? new Date().toISOString()),

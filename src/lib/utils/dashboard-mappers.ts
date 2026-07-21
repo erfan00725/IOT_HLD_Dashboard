@@ -8,17 +8,18 @@ import type { AutomationRule } from "@/lib/types/automation-rule";
 import { RulesAutomationType } from "../types/customeTypes";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shared types (inferred from Supabase join shapes)
+// Shared types (inferred from the normalized query join shapes)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface DeviceStateRow {
-  device_external_key: string;
-  state_value: string;
+  external_key: string;
+  state_key: string | null;
+  is_safe_state: boolean | null;
   last_seen_at: string;
   devices: {
     name: string;
-    category: string;
-    expected_safe_state: string;
+    device_type_id: string;
+    device_type_label: string;
     active: boolean;
   };
 }
@@ -27,16 +28,16 @@ export interface ReminderRuleRow {
   id: string;
   reminder_text: string;
   severity: number;
-  device_external_key: string;
-  devices: { name: string; category: string };
+  external_key: string;
+  devices: { name: string; device_type_id: string; device_type_label: string };
 }
 
 export interface StateEventRow {
   id: number;
-  device_external_key: string;
-  state_value: string;
+  external_key: string;
+  state_key: string | null;
   observed_at: string;
-  devices: { name: string; category: string };
+  devices: { name: string; device_type_id: string; device_type_label: string };
 }
 
 export interface AutomationRuleRow {
@@ -45,9 +46,9 @@ export interface AutomationRuleRow {
   severity: number;
   active: boolean;
   trigger_presence_state: string;
-  trigger_device_state: string;
-  device_external_key: string;
-  devices: { name: string; category: string };
+  trigger_state_key: string;
+  external_key: string;
+  devices: { name: string; device_type_id: string; device_type_label: string };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,22 +62,19 @@ export function severityToPriority(severity: number): Priority {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Category → tone colour for icon bubbles
+// Device type → tone colour for icon bubbles
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function categoryToTone(category?: string): ToneColor {
-  switch (category) {
+export function deviceTypeToTone(deviceTypeId?: string): ToneColor {
+  switch (deviceTypeId) {
     case "presence":
       return "teal";
-    case "lighting":
+    case "switch":
       return "amber";
-    case "safety":
-      return "red";
-    case "access":
-    case "opening":
+    case "lock":
       return "slate";
-    case "climate":
-      return "teal";
+    case "item":
+      return "slate";
     default:
       return "slate";
   }
@@ -89,16 +87,18 @@ export function categoryToTone(category?: string): ToneColor {
 // LucideIcon component — it matches the `AutomationRule["icon"]` type so the
 // AutomationRules UI can dynamically render the correct icon by name.
 //
-// The sibling `categoryToIcon` in `device-icons.ts` returns a LucideIcon
+// The sibling `deviceTypeToIcon` in `device-icons.ts` returns a LucideIcon
 // component for direct rendering in reminder/event rows and is a different
 // concern, hence the distinct name here.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function categoryToIconName(category?: string): AutomationRule["icon"] {
-  switch (category) {
-    case "lighting":
+export function deviceTypeToIconName(
+  deviceTypeId?: string,
+): AutomationRule["icon"] {
+  switch (deviceTypeId) {
+    case "switch":
       return "lightbulb";
-    case "safety":
+    case "lock":
       return "shield";
     default:
       return "home";
@@ -117,10 +117,10 @@ export function mapRuleToAutomation(row: RulesAutomationType): AutomationRule {
   return {
     id: row.id,
     name: row.reminder_text,
-    icon: categoryToIconName(row.devices?.category || undefined),
-    iconColor: categoryToTone(row.devices?.category || undefined),
+    icon: deviceTypeToIconName(row.devices?.device_type_id || undefined),
+    iconColor: deviceTypeToTone(row.devices?.device_type_id || undefined),
     trigger: `Presence: ${row.trigger_presence_state}`,
-    condition: `Device state = ${row.trigger_device_state}`,
+    condition: `Device state = ${row.trigger_state_key}`,
     action: row.reminder_text,
     enabled: row.active,
   };

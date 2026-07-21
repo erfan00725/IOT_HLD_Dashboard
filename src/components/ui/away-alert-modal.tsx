@@ -9,10 +9,10 @@ import {
 } from "@/lib/api/dashboard";
 import {
   severityToPriority,
-  categoryToTone,
+  deviceTypeToTone,
   formatTime,
 } from "@/lib/utils/dashboard-mappers";
-import { categoryToIcon } from "@/lib/utils/device-icons";
+import { deviceTypeToIconOr } from "@/lib/utils/device-icons";
 import {
   ReminderRow,
   type ReminderDisplayRow,
@@ -30,12 +30,12 @@ interface AwayAlertModalProps {
 /** Maps a raw reminder rule row into the display shape used by the modal. */
 function mapReminderToRow(rule: ActiveReminderRule): ReminderDisplayRow {
   return {
-    icon: categoryToIcon(rule.devices?.category),
+    icon: deviceTypeToIconOr(rule.devices?.device_type_id),
     title: rule.reminder_text,
     sub: rule.devices?.name || "_",
     time: formatTime(rule.created_at ?? new Date().toISOString()),
     priority: severityToPriority(rule.severity),
-    tone: categoryToTone(rule.devices?.category),
+    tone: deviceTypeToTone(rule.devices?.device_type_id),
   };
 }
 

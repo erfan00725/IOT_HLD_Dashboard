@@ -4,7 +4,7 @@ import { CardPanel } from "@/components/ui/card-panel";
 import { PanelHeader } from "@/components/ui/panel-header";
 import { IconBubble } from "@/components/ui/icon-bubble";
 import { ICON_BUBBLE_STYLES } from "@/lib/utils/tone-styles";
-import { categoryToIcon } from "@/lib/utils/device-icons";
+import { deviceTypeToIconOr } from "@/lib/utils/device-icons";
 import { QueryStateWrapper } from "@/components/ui/query-state-wrapper";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRecentLeaveEvents } from "@/lib/api/dashboard";
@@ -63,10 +63,10 @@ export function RecentLeaveEvents() {
   });
 
   const events: LeaveEvent[] = rawEvents.map((ev) => ({
-    icon: categoryToIcon(ev.devices?.category, Clock),
+    icon: deviceTypeToIconOr(ev.devices?.device_type_id, Clock),
     time: formatTime(ev.observed_at),
     title: ev.devices?.name || "_",
-    sub: `State: ${ev.state_value}`,
+    sub: `State: ${ev.state_key ?? "unknown"}`,
   }));
 
   return (

@@ -5,7 +5,7 @@ import {
   type ToneColor,
   type Priority,
 } from "@/lib/utils/tone-styles";
-import { deviceCategoryToIcon } from "@/lib/utils/device-icons";
+import { deviceTypeToIcon } from "@/lib/utils/device-icons";
 import { severityToPriority } from "@/lib/utils/dashboard-mappers";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -16,9 +16,9 @@ export interface ReminderRuleRowData {
   severity: number;
   active: boolean;
   trigger_presence_state: string | null;
-  trigger_device_state: string;
+  trigger_state_key: string;
   device_name: string | null;
-  device_category: string | null;
+  device_type_id: string | null;
 }
 
 interface ReminderRuleRowProps {
@@ -29,15 +29,15 @@ interface ReminderRuleRowProps {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Maps a device category to a tone colour for the icon bubble. */
-function categoryToTone(category?: string | null): ToneColor {
-  switch (category) {
+/** Maps a device type to a tone colour for the icon bubble. */
+function deviceTypeToTone(deviceTypeId?: string | null): ToneColor {
+  switch (deviceTypeId) {
     case "presence":
       return "teal";
-    case "lighting":
+    case "switch":
       return "amber";
-    case "safety":
-      return "red";
+    case "lock":
+      return "slate";
     default:
       return "slate";
   }
@@ -58,8 +58,8 @@ export function ReminderRuleRow({
   onToggle,
   pending,
 }: ReminderRuleRowProps) {
-  const Icon: LucideIcon = deviceCategoryToIcon(rule.device_category);
-  const tone: ToneColor = categoryToTone(rule.device_category);
+  const Icon: LucideIcon = deviceTypeToIcon(rule.device_type_id);
+  const tone: ToneColor = deviceTypeToTone(rule.device_type_id);
   const priority: Priority = severityToPriority(rule.severity);
 
   return (
@@ -92,7 +92,7 @@ export function ReminderRuleRow({
 
       {/* Condition */}
       <td className="hidden px-3 py-3.5 text-sm text-slate-500 dark:text-slate-400 lg:table-cell">
-        State = {rule.trigger_device_state}
+        State = {rule.trigger_state_key}
       </td>
 
       {/* Priority */}

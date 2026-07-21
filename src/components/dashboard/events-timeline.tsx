@@ -9,9 +9,9 @@ import {
   PanelHeader,
   type FilterTabOption,
 } from "@/components/ui";
-import { deviceCategoryToIcon, deviceCategoryLabel } from "@/lib/utils/device-icons";
+import { deviceTypeToIcon, deviceTypeLabel } from "@/lib/utils/device-icons";
 import {
-  categoryToTone,
+  deviceTypeToTone,
   formatTime,
 } from "@/lib/utils/dashboard-mappers";
 import {
@@ -25,40 +25,40 @@ interface EventsTimelineProps {
   events: EventsPageEvent[];
 }
 
-const ALL_CATEGORIES = "all";
+const ALL_TYPES = "all";
 
 export function EventsTimeline({ events }: EventsTimelineProps) {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>(ALL_CATEGORIES);
+  const [deviceType, setDeviceType] = useState<string>(ALL_TYPES);
 
-  // Build category filter options dynamically from the events present.
-  const categoryOptions: FilterTabOption[] = useMemo(() => {
-    const present = new Set(events.map((e) => e.device_category));
+  // Build device-type filter options dynamically from the events present.
+  const deviceTypeOptions: FilterTabOption[] = useMemo(() => {
+    const present = new Set(events.map((e) => e.device_type_id));
     return [
-      { label: "All", value: ALL_CATEGORIES },
+      { label: "All", value: ALL_TYPES },
       ...Array.from(present)
         .sort()
-        .map((c) => ({ label: deviceCategoryLabel(c), value: c })),
+        .map((t) => ({ label: deviceTypeLabel(t), value: t })),
     ];
   }, [events]);
 
-  // Filter by search term + category. Events arrive newest-first from the
+  // Filter by search term + device type. Events arrive newest-first from the
   // server, and that order is preserved through filtering and grouping.
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return events.filter((e) => {
-      const matchesCategory =
-        category === ALL_CATEGORIES || e.device_category === category;
-      if (!matchesCategory) return false;
+      const matchesType =
+        deviceType === ALL_TYPES || e.device_type_id === deviceType;
+      if (!matchesType) return false;
       if (!q) return true;
       return (
         e.device_name.toLowerCase().includes(q) ||
-        deviceCategoryLabel(e.device_category).toLowerCase().includes(q) ||
-        e.state_value.toLowerCase().includes(q) ||
+        deviceTypeLabel(e.device_type_id).toLowerCase().includes(q) ||
+        (e.state_key?.toLowerCase().includes(q) ?? false) ||
         (e.room_name?.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [events, search, category]);
+  }, [events, search, deviceType]);
 
   const dayBuckets = useMemo(
     () => groupByDay(filtered, (e) => e.observed_at),
@@ -70,9 +70,9 @@ export function EventsTimeline({ events }: EventsTimelineProps) {
       <EventsFilters
         search={search}
         onSearchChange={setSearch}
-        category={category}
-        onCategoryChange={setCategory}
-        categoryOptions={categoryOptions}
+        deviceType={deviceType}
+        onDeviceTypeChange={setDeviceType}
+        deviceTypeOptions={deviceTypeOptions}
         totalResults={filtered.length}
       />
 
@@ -90,13 +90,13 @@ export function EventsTimeline({ events }: EventsTimelineProps) {
                 {bucket.items.map((event) => (
                   <li key={event.id}>
                     <EventItem
-                      icon={deviceCategoryToIcon(event.device_category)}
-                      tone={categoryToTone(event.device_category)}
+                      icon={deviceTypeToIcon(event.device_type_id)}
+                      tone={deviceTypeToTone(event.device_type_id)}
                       time={formatTime(event.observed_at)}
                       title={event.device_name}
-                      sub={`${deviceCategoryLabel(event.device_category)} · ${eventStateLabel(event.state_value)}`}
-                      statusLabel={eventStateLabel(event.state_value)}
-                      statusTone={eventStateToTone(event.state_value)}
+                      sub={`${deviceTypeLabel(event.device_type_id)} · ${eventStateLabel(event.state_key)}`}
+                      statusLabel={eventStateLabel(event.state_key)}
+                      statusTone={eventStateToTone(event.state_key)}
                       room={event.room_name}
                     />
                   </li>

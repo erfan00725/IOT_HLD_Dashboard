@@ -14,11 +14,11 @@ import {
   ICON_BUBBLE_STYLES,
   classificationToTone,
 } from "@/lib/utils/tone-styles";
-import { categoryToTone, formatTime } from "@/lib/utils/dashboard-mappers";
+import { deviceTypeToTone, formatTime } from "@/lib/utils/dashboard-mappers";
 import { classifyDevice } from "@/lib/utils/device-health";
 import {
-  deviceCategoryToIcon,
-  deviceCategoryLabel,
+  deviceTypeToIcon,
+  deviceTypeLabel,
 } from "@/lib/utils/device-icons";
 import {
   toggleDeviceActiveAction,
@@ -173,14 +173,11 @@ export function DeviceCard({ device }: DeviceCardProps) {
     );
   }
 
-  const Icon = deviceCategoryToIcon(device.category);
-  const tone = categoryToTone(device.category);
+  const Icon = deviceTypeToIcon(device.device_type_id);
+  const tone = deviceTypeToTone(device.device_type_id);
   const deviceClass =
-    device.state_value != null && device.expected_safe_state
-      ? classifyDevice(
-          device.state_value as Parameters<typeof classifyDevice>[0],
-          device.expected_safe_state,
-        )
+    device.state_key != null
+      ? classifyDevice(device.state_key, device.is_safe_state)
       : "Offline";
   const statusTone = toggleState.active
     ? classificationToTone(deviceClass)
@@ -204,7 +201,7 @@ export function DeviceCard({ device }: DeviceCardProps) {
               {device.name}
             </h3>
             <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-              {deviceCategoryLabel(device.category)}
+              {deviceTypeLabel(device.device_type_id)}
             </p>
           </div>
         </div>

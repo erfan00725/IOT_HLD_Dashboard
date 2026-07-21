@@ -55,14 +55,11 @@ function computeSummary(devices: DevicesPageDevice[]) {
 
   for (const d of devices) {
     if (!d.active) continue;
-    if (!d.state_value || !d.expected_safe_state) {
+    if (!d.state_key) {
       offline += 1;
       continue;
     }
-    const c = classifyDevice(
-      d.state_value as Parameters<typeof classifyDevice>[0],
-      d.expected_safe_state,
-    );
+    const c = classifyDevice(d.state_key, d.is_safe_state);
     if (c === "Online") online += 1;
     else if (c === "Warning") warning += 1;
     else offline += 1;

@@ -91,7 +91,7 @@ export function RemindersTable({ rules: initialRules }: RemindersTableProps) {
       return (
         rule.reminder_text.toLowerCase().includes(q) ||
         (rule.device_name?.toLowerCase().includes(q) ?? false) ||
-        rule.trigger_device_state.toLowerCase().includes(q) ||
+        rule.trigger_state_key.toLowerCase().includes(q) ||
         (rule.trigger_presence_state?.toLowerCase().includes(q) ?? false)
       );
     });

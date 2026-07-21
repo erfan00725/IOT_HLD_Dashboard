@@ -1,23 +1,28 @@
 /**
  * Server-side CRUD actions for the `device_latest_states` table.
+ *
+ * Each row is the current state of one device, keyed by `device_id` (PK).
+ * The concrete state value is referenced by `device_type_state_id` →
+ * `device_type_states.id`.
  */
 
 import { prisma } from "@/lib/prisma";
-import type { device_status } from "@/generated/prisma/client";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
 /** Fetch the latest state for every device in a home. */
 export async function getLatestStatesByHomeId(homeId: string) {
   return prisma.device_latest_states.findMany({
-    where: { home_id: homeId },
+    where: { devices: { home_id: homeId } },
+    include: { device_type_states: true },
   });
 }
 
-/** Fetch the latest state for a single device by its external key. */
-export async function getLatestStateByDeviceKey(deviceExternalKey: string) {
+/** Fetch the latest state for a single device by its UUID. */
+export async function getLatestStateByDeviceId(deviceId: string) {
   return prisma.device_latest_states.findUniqueOrThrow({
-    where: { device_external_key: deviceExternalKey },
+    where: { device_id: deviceId },
+    include: { device_type_states: true },
   });
 }
 
@@ -25,19 +30,16 @@ export async function getLatestStateByDeviceKey(deviceExternalKey: string) {
 
 /**
  * Insert or update the latest state for a device.
- * Conflicts on `device_external_key` (the primary key) are updated in place.
+ * Conflicts on `device_id` (the primary key) are updated in place.
  */
 export async function upsertDeviceLatestState(payload: {
-  device_external_key: string;
-  home_id: string;
-  room_id?: string | null;
-  state_value?: device_status;
-  state_payload?: unknown;
+  device_id: string;
+  device_type_state_id: number;
   source?: string;
   last_seen_at?: Date;
 }) {
   return prisma.device_latest_states.upsert({
-    where: { device_external_key: payload.device_external_key },
+    where: { device_id: payload.device_id },
     create: payload as never,
     update: payload as never,
   });
@@ -47,15 +49,15 @@ export async function upsertDeviceLatestState(payload: {
 
 /** Update specific fields of a device's latest state record. */
 export async function updateDeviceLatestState(
-  deviceExternalKey: string,
+  deviceId: string,
   payload: {
-    state_value?: device_status;
-    state_payload?: unknown;
+    device_type_state_id?: number;
+    source?: string;
     last_seen_at?: Date;
   },
 ) {
   return prisma.device_latest_states.update({
-    where: { device_external_key: deviceExternalKey },
+    where: { device_id: deviceId },
     data: payload as never,
   });
 }
@@ -63,8 +65,8 @@ export async function updateDeviceLatestState(
 // ─── Delete ─────────────────────────────────────────────────────────────────────────────
 
 /** Delete the latest-state record for a specific device. */
-export async function deleteDeviceLatestState(deviceExternalKey: string) {
+export async function deleteDeviceLatestState(deviceId: string) {
   await prisma.device_latest_states.delete({
-    where: { device_external_key: deviceExternalKey },
+    where: { device_id: deviceId },
   });
 }

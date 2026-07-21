@@ -36,7 +36,7 @@ export async function DeviceHealth() {
   // Tally by classification
   const counts = { Online: 0, Warning: 0, Offline: 0 };
   for (const d of activeStates) {
-    const cls = classifyDevice(d.state_value, d.devices?.expected_safe_state);
+    const cls = classifyDevice(d.state_key, d.is_safe_state);
     counts[cls]++;
   }
 

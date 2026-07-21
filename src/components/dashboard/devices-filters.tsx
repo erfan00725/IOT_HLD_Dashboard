@@ -5,14 +5,14 @@ import { FilterTabs, SearchInput, type FilterTabOption } from "@/components/ui";
 interface DevicesFiltersProps {
   search: string;
   onSearchChange: (v: string) => void;
-  category: string;
-  onCategoryChange: (v: string) => void;
-  categoryOptions: FilterTabOption[];
+  deviceType: string;
+  onDeviceTypeChange: (v: string) => void;
+  deviceTypeOptions: FilterTabOption[];
   totalResults: number;
 }
 
 /**
- * Search + category filter bar for the devices page.
+ * Search + device-type filter bar for the devices page.
  *
  * This is a presentational client component — all filter state lives in the
  * parent (`DeviceGrid`) and is passed down via props.
@@ -20,9 +20,9 @@ interface DevicesFiltersProps {
 export function DevicesFilters({
   search,
   onSearchChange,
-  category,
-  onCategoryChange,
-  categoryOptions,
+  deviceType,
+  onDeviceTypeChange,
+  deviceTypeOptions,
   totalResults,
 }: DevicesFiltersProps) {
   return (
@@ -39,9 +39,9 @@ export function DevicesFilters({
         </p>
       </div>
       <FilterTabs
-        options={categoryOptions}
-        selected={category}
-        onChange={onCategoryChange}
+        options={deviceTypeOptions}
+        selected={deviceType}
+        onChange={onDeviceTypeChange}
       />
     </div>
   );

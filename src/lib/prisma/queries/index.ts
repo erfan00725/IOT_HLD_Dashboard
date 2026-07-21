@@ -12,4 +12,4 @@ export * from "./device_state_events";
 export * from "./reminder_rules";
 export * from "./reminder_events";
 export * from "./leave_sessions";
-export * from "./profiles";
+export * from "./user";

@@ -1,9 +1,12 @@
 /**
  * Server-side CRUD actions for the `devices` table.
+ *
+ * Devices are typed via `device_type_id` (presence/switch/lock/item). Their
+ * "safe" state is referenced by `safe_device_type_state_id` →
+ * `device_type_states.id`.
  */
 
 import { prisma } from "@/lib/prisma";
-import type { device_category, device_status } from "@/generated/prisma/client";
 
 // ─── Read ──────────────────────────────────────────────────────────────────────────────
 
@@ -23,13 +26,10 @@ export async function getDevicesByRoomId(roomId: string) {
   });
 }
 
-/** Fetch all devices of a given category in a home. */
-export async function getDevicesByCategory(
-  homeId: string,
-  category: device_category,
-) {
+/** Fetch all devices of a given device type in a home. */
+export async function getDevicesByType(homeId: string, deviceTypeId: string) {
   return prisma.devices.findMany({
-    where: { home_id: homeId, category },
+    where: { home_id: homeId, device_type_id: deviceTypeId },
   });
 }
 
@@ -51,10 +51,10 @@ export async function getDeviceByExternalKey(externalKey: string) {
 export async function createDevice(payload: {
   home_id: string;
   room_id?: string | null;
+  device_type_id: string;
   external_key: string;
   name: string;
-  category: device_category;
-  expected_safe_state?: device_status;
+  safe_device_type_state_id?: number | null;
   reminder_enabled?: boolean;
   active?: boolean;
   metadata?: unknown;
@@ -70,10 +70,10 @@ export async function updateDevice(
   payload: {
     home_id?: string;
     room_id?: string | null;
+    device_type_id?: string;
     external_key?: string;
     name?: string;
-    category?: device_category;
-    expected_safe_state?: device_status;
+    safe_device_type_state_id?: number | null;
     reminder_enabled?: boolean;
     active?: boolean;
     metadata?: unknown;

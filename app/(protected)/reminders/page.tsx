@@ -30,9 +30,9 @@ export default async function RemindersPage() {
     severity: rule.severity,
     active: rule.active,
     trigger_presence_state: rule.trigger_presence_state,
-    trigger_device_state: rule.trigger_device_state,
+    trigger_state_key: rule.trigger_state_key,
     device_name: rule.devices?.name ?? null,
-    device_category: rule.devices?.category ?? null,
+    device_type_id: rule.devices?.device_type_id ?? null,
   }));
 
   return (

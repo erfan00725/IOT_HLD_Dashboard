@@ -1,5 +1,10 @@
 /**
  * Server-side CRUD actions for the `reminder_rules` table.
+ *
+ * Rules are attached to a device via `device_id` and fire when the device
+ * reaches the state referenced by `trigger_device_type_state_id` →
+ * `device_type_states.id`. There is no `home_id` column; home scoping is done
+ * through the `devices` relation.
  */
 
 import { prisma } from "@/lib/prisma";
@@ -9,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 /** Fetch all reminder rules for a given home. */
 export async function getReminderRulesByHomeId(homeId: string) {
   return prisma.reminder_rules.findMany({
-    where: { home_id: homeId },
+    where: { devices: { home_id: homeId } },
     orderBy: { created_at: "desc" },
   });
 }
@@ -17,7 +22,7 @@ export async function getReminderRulesByHomeId(homeId: string) {
 /** Fetch only active reminder rules for a home, ordered by severity desc. */
 export async function getActiveReminderRules(homeId: string) {
   return prisma.reminder_rules.findMany({
-    where: { home_id: homeId, active: true },
+    where: { devices: { home_id: homeId }, active: true },
     orderBy: { severity: "desc" },
   });
 }
@@ -31,10 +36,9 @@ export async function getReminderRuleById(id: string) {
 
 /** Insert a new reminder rule. */
 export async function createReminderRule(payload: {
-  home_id: string;
-  device_external_key: string;
+  device_id: string;
+  trigger_device_type_state_id: number;
   trigger_presence_state?: string;
-  trigger_device_state: string;
   reminder_text: string;
   severity?: number;
   active?: boolean;
@@ -49,7 +53,7 @@ export async function updateReminderRule(
   id: string,
   payload: {
     trigger_presence_state?: string;
-    trigger_device_state?: string;
+    trigger_device_type_state_id?: number;
     reminder_text?: string;
     severity?: number;
     active?: boolean;

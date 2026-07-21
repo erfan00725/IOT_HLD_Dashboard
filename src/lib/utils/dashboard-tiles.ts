@@ -4,6 +4,11 @@
  * Extracted from `home-status-section-client.tsx` (Step 6 + feedback round) so
  * the domain logic is decoupled from the React view layer and can be tested
  * in isolation.
+ *
+ * The five hero tiles map to specific seeded devices by `external_key`
+ * (presence_main / kitchen_light / kitchen_gas_stove / house_keys /
+ * front_door_lock) because several of them share the same `device_type_id`
+ * (e.g. the light and the stove are both `switch`).
  */
 
 import {
@@ -22,33 +27,33 @@ import type {
   HomeRecord,
 } from "@/lib/types/dashboard";
 
+// Seeded external keys for the five hero devices.
+const DEVICE_KEYS = {
+  presence: "presence_main",
+  light: "kitchen_light",
+  stove: "kitchen_gas_stove",
+  keys: "house_keys",
+  door: "front_door_lock",
+} as const;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Selectors — pure domain helpers (no React import)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Returns the first device-state row matching a category, or undefined. */
-export function findByCategory(
+/** Returns the device-state row for a given external key, or undefined. */
+export function findByKey(
   states: DashboardDeviceState[],
-  category: string,
+  externalKey: string,
 ): DashboardDeviceState | undefined {
-  return states.find((d) => d.devices?.category === category);
+  return states.find((d) => d.external_key === externalKey);
 }
 
-/** Returns the raw `state_value` for a category, or `null` when absent. */
+/** Returns the raw `state_key` for a device external key, or `null`. */
 export function stateOf(
   states: DashboardDeviceState[],
-  category: string,
+  externalKey: string,
 ): string | null {
-  return findByCategory(states, category)?.state_value ?? null;
-}
-
-/** Counts lighting devices whose state is not "off". */
-export function countLightsOn(states: DashboardDeviceState[]): number {
-  return states.filter(
-    (d) =>
-      d.devices?.category === "lighting" &&
-      d.state_value.toLowerCase() !== "off",
-  ).length;
+  return findByKey(states, externalKey)?.state_key ?? null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -115,29 +120,31 @@ export function buildStatusTiles(
         tone: "slate",
       };
 
-  // ── Lighting ─────────────────────────────────────────────────────────
-  const lightsOnCount = countLightsOn(states);
+  // ── Lighting (kitchen_light switch: "on"/"off") ──────────────────────
+  const lightState = stateOf(states, DEVICE_KEYS.light);
   const lightingTile: StatusTileData =
-    lightsOnCount > 0
-      ? {
-          icon: Lightbulb,
-          label: "Lights On",
-          sub: `${lightsOnCount} device${lightsOnCount > 1 ? "s" : ""}`,
-          tone: "amber",
-        }
-      : {
-          icon: Lightbulb,
-          label: "Lights Off",
-          sub: "All clear",
-          tone: "teal",
-        };
+    lightState === null
+      ? { icon: Lightbulb, label: "Lights", sub: "No sensor", tone: "slate" }
+      : lightState.toLowerCase() === "on"
+        ? {
+            icon: Lightbulb,
+            label: "Lights On",
+            sub: "Kitchen light",
+            tone: "amber",
+          }
+        : {
+            icon: Lightbulb,
+            label: "Lights Off",
+            sub: "All clear",
+            tone: "teal",
+          };
 
-  // ── Safety / Stove ──────────────────────────────────────────────────
-  const safetyState = stateOf(states, "safety");
+  // ── Safety / Stove (kitchen_gas_stove switch: "on"/"off") ────────────
+  const stoveState = stateOf(states, DEVICE_KEYS.stove);
   const stoveTile: StatusTileData =
-    safetyState === null
+    stoveState === null
       ? { icon: Grid2x2, label: "Stove", sub: "No sensor", tone: "slate" }
-      : safetyState.toLowerCase() === "safe"
+      : stoveState.toLowerCase() === "off"
         ? {
             icon: Grid2x2,
             label: "Stove Off",
@@ -151,12 +158,12 @@ export function buildStatusTiles(
             tone: "red",
           };
 
-  // ── Access / Keys ────────────────────────────────────────────────────
-  const accessState = stateOf(states, "access");
+  // ── Item / Keys (house_keys item: "taken"/"missing") ─────────────────
+  const keysState = stateOf(states, DEVICE_KEYS.keys);
   const keyTile: StatusTileData =
-    accessState === null
+    keysState === null
       ? { icon: KeyRound, label: "Keys", sub: "No tracker", tone: "slate" }
-      : accessState.toLowerCase() === "detected"
+      : keysState.toLowerCase() === "taken"
         ? {
             icon: KeyRound,
             label: "Keys Detected",
@@ -170,8 +177,8 @@ export function buildStatusTiles(
             tone: "red",
           };
 
-  // ── Opening / Door ──────────────────────────────────────────────────
-  const doorState = stateOf(states, "opening");
+  // ── Lock / Door (front_door_lock lock: "locked"/"unlocked") ──────────
+  const doorState = stateOf(states, DEVICE_KEYS.door);
   const doorTile: StatusTileData =
     doorState === null
       ? {

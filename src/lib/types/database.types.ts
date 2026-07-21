@@ -17,64 +17,41 @@ export type Database = {
       device_latest_states: {
         Row: {
           created_at: string;
-          device_external_key: string;
-          home_id: string;
+          device_id: string;
+          device_type_state_id: number;
           last_seen_at: string;
-          room_id: string | null;
           source: string;
-          state_payload: Json;
-          state_value: Database["public"]["Enums"]["device_status"];
           updated_at: string;
         };
         Insert: {
           created_at?: string;
-          device_external_key: string;
-          home_id: string;
+          device_id: string;
+          device_type_state_id: number;
           last_seen_at?: string;
-          room_id?: string | null;
           source?: string;
-          state_payload?: Json;
-          state_value?: Database["public"]["Enums"]["device_status"];
           updated_at?: string;
         };
         Update: {
           created_at?: string;
-          device_external_key?: string;
-          home_id?: string;
+          device_id?: string;
+          device_type_state_id?: number;
           last_seen_at?: string;
-          room_id?: string | null;
           source?: string;
-          state_payload?: Json;
-          state_value?: Database["public"]["Enums"]["device_status"];
           updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "device_latest_states_device_external_key_fkey";
-            columns: ["device_external_key"];
+            foreignKeyName: "device_latest_states_device_id_fkey";
+            columns: ["device_id"];
             isOneToOne: true;
             referencedRelation: "devices";
-            referencedColumns: ["external_key"];
-          },
-          {
-            foreignKeyName: "device_latest_states_device_external_key_fkey";
-            columns: ["device_external_key"];
-            isOneToOne: true;
-            referencedRelation: "v_device_inventory";
-            referencedColumns: ["external_key"];
-          },
-          {
-            foreignKeyName: "device_latest_states_home_id_fkey";
-            columns: ["home_id"];
-            isOneToOne: false;
-            referencedRelation: "homes";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "device_latest_states_room_id_fkey";
-            columns: ["room_id"];
+            foreignKeyName: "device_latest_states_device_type_state_id_fkey";
+            columns: ["device_type_state_id"];
             isOneToOne: false;
-            referencedRelation: "rooms";
+            referencedRelation: "device_type_states";
             referencedColumns: ["id"];
           },
         ];
@@ -82,77 +59,109 @@ export type Database = {
       device_state_events: {
         Row: {
           created_at: string;
-          device_external_key: string;
-          home_id: string;
+          device_id: string;
+          device_type_state_id: number;
           id: number;
           mqtt_topic: string | null;
           observed_at: string;
           payload: Json;
-          room_id: string | null;
           source: string;
-          state_value: string;
         };
         Insert: {
           created_at?: string;
-          device_external_key: string;
-          home_id: string;
+          device_id: string;
+          device_type_state_id: number;
           id?: never;
           mqtt_topic?: string | null;
           observed_at?: string;
           payload?: Json;
-          room_id?: string | null;
           source?: string;
-          state_value: string;
         };
         Update: {
           created_at?: string;
-          device_external_key?: string;
-          home_id?: string;
+          device_id?: string;
+          device_type_state_id?: number;
           id?: never;
           mqtt_topic?: string | null;
           observed_at?: string;
           payload?: Json;
-          room_id?: string | null;
           source?: string;
-          state_value?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "device_state_events_device_external_key_fkey";
-            columns: ["device_external_key"];
+            foreignKeyName: "device_state_events_device_id_fkey";
+            columns: ["device_id"];
             isOneToOne: false;
             referencedRelation: "devices";
-            referencedColumns: ["external_key"];
-          },
-          {
-            foreignKeyName: "device_state_events_device_external_key_fkey";
-            columns: ["device_external_key"];
-            isOneToOne: false;
-            referencedRelation: "v_device_inventory";
-            referencedColumns: ["external_key"];
-          },
-          {
-            foreignKeyName: "device_state_events_home_id_fkey";
-            columns: ["home_id"];
-            isOneToOne: false;
-            referencedRelation: "homes";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "device_state_events_room_id_fkey";
-            columns: ["room_id"];
+            foreignKeyName: "device_state_events_device_type_state_id_fkey";
+            columns: ["device_type_state_id"];
             isOneToOne: false;
-            referencedRelation: "rooms";
+            referencedRelation: "device_type_states";
             referencedColumns: ["id"];
           },
         ];
       };
+      device_type_states: {
+        Row: {
+          device_type_id: string;
+          id: number;
+          is_safe_state: boolean | null;
+          label: string;
+          state_key: string;
+        };
+        Insert: {
+          device_type_id: string;
+          id?: number;
+          is_safe_state?: boolean | null;
+          label: string;
+          state_key: string;
+        };
+        Update: {
+          device_type_id?: string;
+          id?: number;
+          is_safe_state?: boolean | null;
+          label?: string;
+          state_key?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "device_type_states_device_type_id_fkey";
+            columns: ["device_type_id"];
+            isOneToOne: false;
+            referencedRelation: "device_types";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      device_types: {
+        Row: {
+          created_at: string;
+          icon: string;
+          id: string;
+          label: string;
+        };
+        Insert: {
+          created_at?: string;
+          icon: string;
+          id: string;
+          label: string;
+        };
+        Update: {
+          created_at?: string;
+          icon?: string;
+          id?: string;
+          label?: string;
+        };
+        Relationships: [];
+      };
       devices: {
         Row: {
           active: boolean;
-          category: Database["public"]["Enums"]["device_category"];
           created_at: string;
-          expected_safe_state: string;
+          device_type_id: string;
           external_key: string;
           home_id: string;
           id: string;
@@ -160,13 +169,13 @@ export type Database = {
           name: string;
           reminder_enabled: boolean;
           room_id: string | null;
+          safe_device_type_state_id: number | null;
           updated_at: string;
         };
         Insert: {
           active?: boolean;
-          category: Database["public"]["Enums"]["device_category"];
           created_at?: string;
-          expected_safe_state: string;
+          device_type_id: string;
           external_key: string;
           home_id: string;
           id?: string;
@@ -174,13 +183,13 @@ export type Database = {
           name: string;
           reminder_enabled?: boolean;
           room_id?: string | null;
+          safe_device_type_state_id?: number | null;
           updated_at?: string;
         };
         Update: {
           active?: boolean;
-          category?: Database["public"]["Enums"]["device_category"];
           created_at?: string;
-          expected_safe_state?: string;
+          device_type_id?: string;
           external_key?: string;
           home_id?: string;
           id?: string;
@@ -188,9 +197,17 @@ export type Database = {
           name?: string;
           reminder_enabled?: boolean;
           room_id?: string | null;
+          safe_device_type_state_id?: number | null;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "devices_device_type_id_fkey";
+            columns: ["device_type_id"];
+            isOneToOne: false;
+            referencedRelation: "device_types";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "devices_home_id_fkey";
             columns: ["home_id"];
@@ -203,6 +220,13 @@ export type Database = {
             columns: ["room_id"];
             isOneToOne: false;
             referencedRelation: "rooms";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "devices_safe_device_type_state_id_fkey";
+            columns: ["safe_device_type_state_id"];
+            isOneToOne: false;
+            referencedRelation: "device_type_states";
             referencedColumns: ["id"];
           },
         ];
@@ -237,7 +261,7 @@ export type Database = {
             foreignKeyName: "homes_owner_id_fkey";
             columns: ["owner_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "user";
             referencedColumns: ["id"];
           },
         ];
@@ -282,31 +306,10 @@ export type Database = {
             foreignKeyName: "leave_sessions_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "user";
             referencedColumns: ["id"];
           },
         ];
-      };
-      profiles: {
-        Row: {
-          created_at: string;
-          display_name: string | null;
-          id: string;
-          updated_at: string;
-        };
-        Insert: {
-          created_at?: string;
-          display_name?: string | null;
-          id: string;
-          updated_at?: string;
-        };
-        Update: {
-          created_at?: string;
-          display_name?: string | null;
-          id?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
       };
       reminder_events: {
         Row: {
@@ -366,59 +369,49 @@ export type Database = {
         Row: {
           active: boolean;
           created_at: string;
-          device_external_key: string;
-          home_id: string;
+          device_id: string;
           id: string;
           reminder_text: string;
           severity: number;
-          trigger_device_state: string;
+          trigger_device_type_state_id: number;
           trigger_presence_state: string;
           updated_at: string;
         };
         Insert: {
           active?: boolean;
           created_at?: string;
-          device_external_key: string;
-          home_id: string;
+          device_id: string;
           id?: string;
           reminder_text: string;
           severity?: number;
-          trigger_device_state: string;
+          trigger_device_type_state_id: number;
           trigger_presence_state?: string;
           updated_at?: string;
         };
         Update: {
           active?: boolean;
           created_at?: string;
-          device_external_key?: string;
-          home_id?: string;
+          device_id?: string;
           id?: string;
           reminder_text?: string;
           severity?: number;
-          trigger_device_state?: string;
+          trigger_device_type_state_id?: number;
           trigger_presence_state?: string;
           updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "reminder_rules_device_external_key_fkey";
-            columns: ["device_external_key"];
+            foreignKeyName: "reminder_rules_device_id_fkey";
+            columns: ["device_id"];
             isOneToOne: false;
             referencedRelation: "devices";
-            referencedColumns: ["external_key"];
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "reminder_rules_device_external_key_fkey";
-            columns: ["device_external_key"];
+            foreignKeyName: "reminder_rules_trigger_device_type_state_id_fkey";
+            columns: ["trigger_device_type_state_id"];
             isOneToOne: false;
-            referencedRelation: "v_device_inventory";
-            referencedColumns: ["external_key"];
-          },
-          {
-            foreignKeyName: "reminder_rules_home_id_fkey";
-            columns: ["home_id"];
-            isOneToOne: false;
-            referencedRelation: "homes";
+            referencedRelation: "device_type_states";
             referencedColumns: ["id"];
           },
         ];
@@ -464,24 +457,6 @@ export type Database = {
           },
         ];
       };
-      Test: {
-        Row: {
-          created_at: string;
-          id: number;
-          text: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          id?: number;
-          text?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          id?: number;
-          text?: string | null;
-        };
-        Relationships: [];
-      };
       user: {
         Row: {
           avatar_url: string | null;
@@ -520,134 +495,40 @@ export type Database = {
       };
     };
     Views: {
-      v_active_reminder_rules: {
-        Row: {
-          active: boolean | null;
-          device_category:
-            | Database["public"]["Enums"]["device_category"]
-            | null;
-          device_external_key: string | null;
-          device_name: string | null;
-          home_id: string | null;
-          id: string | null;
-          reminder_text: string | null;
-          room_code: string | null;
-          room_name: string | null;
-          severity: number | null;
-          trigger_device_state: string | null;
-          trigger_presence_state: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "reminder_rules_device_external_key_fkey";
-            columns: ["device_external_key"];
-            isOneToOne: false;
-            referencedRelation: "devices";
-            referencedColumns: ["external_key"];
-          },
-          {
-            foreignKeyName: "reminder_rules_device_external_key_fkey";
-            columns: ["device_external_key"];
-            isOneToOne: false;
-            referencedRelation: "v_device_inventory";
-            referencedColumns: ["external_key"];
-          },
-          {
-            foreignKeyName: "reminder_rules_home_id_fkey";
-            columns: ["home_id"];
-            isOneToOne: false;
-            referencedRelation: "homes";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      v_device_inventory: {
-        Row: {
-          active: boolean | null;
-          created_at: string | null;
-          device_category:
-            | Database["public"]["Enums"]["device_category"]
-            | null;
-          device_name: string | null;
-          expected_safe_state: string | null;
-          external_key: string | null;
-          home_id: string | null;
-          id: string | null;
-          metadata: Json | null;
-          reminder_enabled: boolean | null;
-          room_code: string | null;
-          room_id: string | null;
-          room_name: string | null;
-          updated_at: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "devices_home_id_fkey";
-            columns: ["home_id"];
-            isOneToOne: false;
-            referencedRelation: "homes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "devices_room_id_fkey";
-            columns: ["room_id"];
-            isOneToOne: false;
-            referencedRelation: "rooms";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      v_latest_device_states: {
-        Row: {
-          device_category:
-            | Database["public"]["Enums"]["device_category"]
-            | null;
-          device_external_key: string | null;
-          device_name: string | null;
-          expected_safe_state: string | null;
-          home_id: string | null;
-          last_seen_at: string | null;
-          room_code: string | null;
-          room_id: string | null;
-          room_name: string | null;
-          source: string | null;
-          state_payload: Json | null;
-          state_value: Database["public"]["Enums"]["device_status"] | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "device_latest_states_device_external_key_fkey";
-            columns: ["device_external_key"];
-            isOneToOne: true;
-            referencedRelation: "devices";
-            referencedColumns: ["external_key"];
-          },
-          {
-            foreignKeyName: "device_latest_states_device_external_key_fkey";
-            columns: ["device_external_key"];
-            isOneToOne: true;
-            referencedRelation: "v_device_inventory";
-            referencedColumns: ["external_key"];
-          },
-          {
-            foreignKeyName: "device_latest_states_home_id_fkey";
-            columns: ["home_id"];
-            isOneToOne: false;
-            referencedRelation: "homes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "device_latest_states_room_id_fkey";
-            columns: ["room_id"];
-            isOneToOne: false;
-            referencedRelation: "rooms";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
+      [_ in never]: never;
     };
     Functions: {
+      assert_device_state_matches_device_type: {
+        Args: {
+          p_context: string;
+          p_device_id: string;
+          p_device_type_state_id: number;
+        };
+        Returns: undefined;
+      };
       home_owned: { Args: { target_home_id: string }; Returns: boolean };
+      record_device_state: {
+        Args: {
+          p_external_key: string;
+          p_mqtt_topic?: string;
+          p_observed_at?: string;
+          p_payload?: Json;
+          p_source?: string;
+          p_state_key: string;
+        };
+        Returns: {
+          current_state_key: string;
+          device_id: string;
+          device_type_id: string;
+          device_type_state_id: number;
+          home_id: string;
+          previous_state_key: string;
+        }[];
+      };
+      reset_iot_demo_data: {
+        Args: { p_confirmation: string; p_home_id: string; p_user_id: string };
+        Returns: Json;
+      };
       seed_demo_home: {
         Args: { p_home_name?: string; p_owner: string };
         Returns: string;

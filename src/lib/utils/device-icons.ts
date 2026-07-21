@@ -1,18 +1,18 @@
 /**
- * Device-category → Lucide icon mapping, shared by device page components.
+ * Device-type → Lucide icon mapping, shared by device page components.
  *
  * Kept separate from `dashboard-mappers.ts` so the latter can stay free of
  * React/Lucide imports (it is imported from both server and client code).
+ *
+ * Keys are `device_type_id` values seeded by the schema: presence, switch,
+ * lock, item.
  */
 
 import {
-  PersonStanding,
-  Lightbulb,
-  ShieldAlert,
-  KeyRound,
+  UserRoundCheck,
+  Power,
   LockKeyhole,
-  Thermometer,
-  Plug,
+  KeyRound,
   Cpu,
   Clock,
   Home,
@@ -20,39 +20,39 @@ import {
 } from "lucide-react";
 
 /**
- * Comprehensive category → icon mapping used across dashboard components.
- * Covers presence, lighting, safety, access, opening, climate, and utility.
+ * device_type_id → icon mapping used across dashboard components.
+ * Covers the four seeded device types (presence, switch, lock, item).
  */
-const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
-  presence: PersonStanding,
-  lighting: Lightbulb,
-  safety: ShieldAlert,
-  access: KeyRound,
-  opening: LockKeyhole,
-  climate: Thermometer,
-  utility: Plug,
+const DEVICE_TYPE_ICON_MAP: Record<string, LucideIcon> = {
+  presence: UserRoundCheck,
+  switch: Power,
+  lock: LockKeyhole,
+  item: KeyRound,
 };
 
-/** Returns a Lucide icon for a device category, falling back to `Cpu`. */
-export function deviceCategoryToIcon(category?: string | null): LucideIcon {
-  if (!category) return Cpu;
-  return CATEGORY_ICON_MAP[category] ?? Cpu;
+/** Returns a Lucide icon for a device type, falling back to `Cpu`. */
+export function deviceTypeToIcon(deviceTypeId?: string | null): LucideIcon {
+  if (!deviceTypeId) return Cpu;
+  return DEVICE_TYPE_ICON_MAP[deviceTypeId] ?? Cpu;
 }
 
 /**
- * Maps a device category to a Lucide icon for display in reminder/event rows.
- * Falls back to `Home` for unknown categories by default (configurable).
+ * Maps a device type to a Lucide icon for display in reminder/event rows.
+ * Falls back to `Home` for unknown types by default (configurable).
  */
-export function categoryToIcon(
-  category?: string,
+export function deviceTypeToIconOr(
+  deviceTypeId?: string | null,
   fallback: LucideIcon = Home,
 ): LucideIcon {
-  if (!category) return fallback;
-  return CATEGORY_ICON_MAP[category] ?? fallback;
+  if (!deviceTypeId) return fallback;
+  return DEVICE_TYPE_ICON_MAP[deviceTypeId] ?? fallback;
 }
 
-/** Human-readable label for a device category slug. */
-export function deviceCategoryLabel(category?: string | null): string {
-  if (!category) return "Device";
-  return category.charAt(0).toUpperCase() + category.slice(1);
+/** Re-exported here so event rows can fall back to a clock icon. */
+export { Clock };
+
+/** Human-readable label for a device type id, e.g. "presence" → "Presence". */
+export function deviceTypeLabel(deviceTypeId?: string | null): string {
+  if (!deviceTypeId) return "Device";
+  return deviceTypeId.charAt(0).toUpperCase() + deviceTypeId.slice(1);
 }

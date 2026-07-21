@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Cpu } from "lucide-react";
 import { DeviceCard } from "./device-card";
 import { DevicesFilters } from "./devices-filters";
-import { deviceCategoryLabel } from "@/lib/utils/device-icons";
+import { deviceTypeLabel } from "@/lib/utils/device-icons";
 import type { DevicesPageDevice } from "@/lib/prisma/queries/dashboard";
 import type { FilterTabOption } from "@/components/ui";
 
@@ -12,46 +12,46 @@ interface DeviceGridProps {
   devices: DevicesPageDevice[];
 }
 
-const ALL_CATEGORIES = "all";
+const ALL_TYPES = "all";
 
 export function DeviceGrid({ devices }: DeviceGridProps) {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>(ALL_CATEGORIES);
+  const [deviceType, setDeviceType] = useState<string>(ALL_TYPES);
 
-  // Build the category filter options dynamically from the devices present.
-  const categoryOptions: FilterTabOption[] = useMemo(() => {
-    const present = new Set(devices.map((d) => d.category));
+  // Build the device-type filter options dynamically from the devices present.
+  const deviceTypeOptions: FilterTabOption[] = useMemo(() => {
+    const present = new Set(devices.map((d) => d.device_type_id));
     return [
-      { label: "All", value: ALL_CATEGORIES },
+      { label: "All", value: ALL_TYPES },
       ...Array.from(present)
         .sort()
-        .map((c) => ({ label: deviceCategoryLabel(c), value: c })),
+        .map((t) => ({ label: deviceTypeLabel(t), value: t })),
     ];
   }, [devices]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return devices.filter((d) => {
-      const matchesCategory =
-        category === ALL_CATEGORIES || d.category === category;
-      if (!matchesCategory) return false;
+      const matchesType =
+        deviceType === ALL_TYPES || d.device_type_id === deviceType;
+      if (!matchesType) return false;
       if (!q) return true;
       return (
         d.name.toLowerCase().includes(q) ||
-        deviceCategoryLabel(d.category).toLowerCase().includes(q) ||
+        deviceTypeLabel(d.device_type_id).toLowerCase().includes(q) ||
         (d.room_name?.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [devices, search, category]);
+  }, [devices, search, deviceType]);
 
   return (
     <div className="grid gap-6">
       <DevicesFilters
         search={search}
         onSearchChange={setSearch}
-        category={category}
-        onCategoryChange={setCategory}
-        categoryOptions={categoryOptions}
+        deviceType={deviceType}
+        onDeviceTypeChange={setDeviceType}
+        deviceTypeOptions={deviceTypeOptions}
         totalResults={filtered.length}
       />
 
@@ -82,7 +82,7 @@ function EmptyState({ hasDevices }: { hasDevices: boolean }) {
         </p>
         <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
           {hasDevices
-            ? "Try adjusting your search or category filter."
+            ? "Try adjusting your search or device type filter."
             : "Devices paired with this home will appear here."}
         </p>
       </div>

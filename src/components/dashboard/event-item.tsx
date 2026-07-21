@@ -93,7 +93,7 @@ export function EmptyEvents({
       </p>
       <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
         {hasEvents
-          ? "Try adjusting your search or category filter."
+          ? "Try adjusting your search or device type filter."
           : "Device activity will be logged here as it happens."}
       </p>
     </CardPanel>

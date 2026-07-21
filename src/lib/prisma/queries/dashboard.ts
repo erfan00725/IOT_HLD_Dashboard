@@ -1,6 +1,16 @@
 /**
  * Dashboard-specific query helpers.
  * All functions are server-only — they rely on the Prisma client.
+ *
+ * These queries target the normalized, typed-state schema:
+ *   - A device's current state lives in `device_latest_states`, keyed by
+ *     `device_id`, and its human value comes from the joined
+ *     `device_type_states.state_key` (+ `is_safe_state`).
+ *   - Devices no longer carry a `category` enum or `expected_safe_state`; the
+ *     UI keys off `device_type_id` (presence/switch/lock/item) and reads the
+ *     safe state from the joined `device_type_states`.
+ *   - State/event/rule tables have no `home_id`; ownership is scoped through
+ *     the `devices` relation (`devices.home_id`).
  */
 
 import { prisma } from "@/lib/prisma";
@@ -12,28 +22,30 @@ import { nextCache } from "@/lib/utils/utils";
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Returns the latest state for every device in a home.
- * Mapped to match the shape consumers expect: `{ device_external_key, state_value,
- * last_seen_at, devices: { name, category, expected_safe_state, active } }[]`
+ * Returns the latest state for every device in a home that has reported one.
+ * Mapped to: `{ external_key, state_key, is_safe_state, last_seen_at,
+ *   devices: { name, device_type_id, device_type_label, active } }[]`
  */
 export async function getDashboardDeviceStates(homeId: string) {
   const rows = await prisma.device_latest_states.findMany({
-    where: { home_id: homeId },
-    include: { devices: true },
+    where: { devices: { home_id: homeId } },
+    include: {
+      devices: { include: { device_types: true } },
+      device_type_states: true,
+    },
   });
 
   return rows.map((row) => ({
-    device_external_key: row.device_external_key,
-    state_value: row.state_value,
+    external_key: row.devices.external_key,
+    state_key: row.device_type_states?.state_key ?? null,
+    is_safe_state: row.device_type_states?.is_safe_state ?? null,
     last_seen_at: row.last_seen_at.toISOString(),
-    devices: row.devices
-      ? {
-          name: row.devices.name,
-          category: row.devices.category as string,
-          expected_safe_state: row.devices.expected_safe_state as string,
-          active: row.devices.active,
-        }
-      : null,
+    devices: {
+      name: row.devices.name,
+      device_type_id: row.devices.device_type_id,
+      device_type_label: row.devices.device_types.label,
+      active: row.devices.active,
+    },
   }));
 }
 
@@ -60,40 +72,42 @@ export async function getActiveLeaveSessionForDashboard(homeId: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Returns all active reminder rules for a home, ordered by severity desc.
- * Mapped to match: `{ id, reminder_text, severity, device_external_key,
- *   devices: { name, category }, created_at }[]`
+ * Returns active reminder rules for a home whose triggering state currently
+ * matches the device's latest reported state.
+ * Mapped to: `{ id, reminder_text, severity, external_key,
+ *   devices: { name, device_type_id, device_type_label }, created_at }[]`
  */
 export async function getActiveReminderRulesForDashboard(homeId: string) {
-  const devices_states = await getDashboardDeviceStates(homeId);
+  const deviceStates = await getDashboardDeviceStates(homeId);
 
   const rules = await prisma.reminder_rules.findMany({
-    where: { home_id: homeId, active: true },
+    where: { devices: { home_id: homeId }, active: true },
     orderBy: { severity: "desc" },
     take: 5,
-    include: { devices: true },
+    include: {
+      devices: { include: { device_types: true } },
+      device_type_states: true,
+    },
   });
 
   const validRules = rules.filter((rule) => {
-    const matchingDevice = devices_states.find(
-      (device) => device.device_external_key === rule.device_external_key,
+    const matchingDevice = deviceStates.find(
+      (device) => device.external_key === rule.devices.external_key,
     );
     if (!matchingDevice) return false;
-    if (rule.trigger_device_state !== matchingDevice.state_value) return false;
-    return matchingDevice;
+    return matchingDevice.state_key === rule.device_type_states.state_key;
   });
 
   return validRules.map((rule) => ({
     id: rule.id,
     reminder_text: rule.reminder_text,
     severity: rule.severity,
-    device_external_key: rule.device_external_key,
-    devices: rule.devices
-      ? {
-          name: rule.devices.name,
-          category: rule.devices.category as string,
-        }
-      : null,
+    external_key: rule.devices.external_key,
+    devices: {
+      name: rule.devices.name,
+      device_type_id: rule.devices.device_type_id,
+      device_type_label: rule.devices.device_types.label,
+    },
     created_at: rule.created_at.toISOString(),
   }));
 }
@@ -104,30 +118,32 @@ export async function getActiveReminderRulesForDashboard(homeId: string) {
 
 /**
  * Returns the 5 most recent device state events for a home.
- * Mapped to match: `{ id, device_external_key, state_value, observed_at,
- *   devices: { name, category } }[]`
+ * Mapped to: `{ id, external_key, state_key, observed_at,
+ *   devices: { name, device_type_id, device_type_label } }[]`
  */
 export async function getRecentStateEventsForDashboard(homeId: string) {
   const events = await nextCache(
     async () => {
       const events = await prisma.device_state_events.findMany({
-        where: { home_id: homeId },
+        where: { devices: { home_id: homeId } },
         orderBy: { observed_at: "desc" },
         take: 5,
-        include: { devices: true },
+        include: {
+          devices: { include: { device_types: true } },
+          device_type_states: true,
+        },
       });
 
       return events.map((ev) => ({
         id: Number(ev.id),
-        device_external_key: ev.device_external_key,
-        state_value: ev.state_value,
+        external_key: ev.devices.external_key,
+        state_key: ev.device_type_states?.state_key ?? null,
         observed_at: ev.observed_at.toISOString(),
-        devices: ev.devices
-          ? {
-              name: ev.devices.name,
-              category: ev.devices.category as string,
-            }
-          : null,
+        devices: {
+          name: ev.devices.name,
+          device_type_id: ev.devices.device_type_id,
+          device_type_label: ev.devices.device_types.label,
+        },
       }));
     },
     `recent-state-events-${homeId}`,
@@ -144,22 +160,19 @@ export async function getRecentStateEventsForDashboard(homeId: string) {
 /**
  * Returns all reminder rules for the automation rules table.
  * Includes device info for icon/colour resolution.
- * Mapped to match: `{ id, reminder_text, severity, active, trigger_presence_state,
- *   trigger_device_state, device_external_key,
- *   devices: { name, category } }[]`
+ * Mapped to: `{ id, reminder_text, severity, active, trigger_presence_state,
+ *   trigger_state_key, external_key,
+ *   devices: { name, device_type_id, device_type_label } }[]`
  */
 export async function getAllRulesForAutomationTable(homeId: string) {
-  const rules = await nextCache(
-    async () => {
-      return await prisma.reminder_rules.findMany({
-        where: { home_id: homeId },
-        orderBy: { severity: "desc" },
-        include: { devices: true },
-      });
+  const rules = await prisma.reminder_rules.findMany({
+    where: { devices: { home_id: homeId } },
+    orderBy: { severity: "desc" },
+    include: {
+      devices: { include: { device_types: true } },
+      device_type_states: true,
     },
-    `automation-rules-${homeId}`,
-    60,
-  );
+  });
 
   return rules.map((rule) => ({
     id: rule.id,
@@ -167,14 +180,13 @@ export async function getAllRulesForAutomationTable(homeId: string) {
     severity: rule.severity,
     active: rule.active,
     trigger_presence_state: rule.trigger_presence_state,
-    trigger_device_state: rule.trigger_device_state,
-    device_external_key: rule.device_external_key,
-    devices: rule.devices
-      ? {
-          name: rule.devices.name,
-          category: rule.devices.category as string,
-        }
-      : null,
+    trigger_state_key: rule.device_type_states.state_key,
+    external_key: rule.devices.external_key,
+    devices: {
+      name: rule.devices.name,
+      device_type_id: rule.devices.device_type_id,
+      device_type_label: rule.devices.device_types.label,
+    },
   }));
 }
 
@@ -188,9 +200,13 @@ export interface RemindersPageRule {
   severity: number;
   active: boolean;
   trigger_presence_state: string | null;
-  trigger_device_state: string;
-  device_external_key: string;
-  devices: { name: string; category: string } | null;
+  trigger_state_key: string;
+  external_key: string;
+  devices: {
+    name: string;
+    device_type_id: string;
+    device_type_label: string;
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -204,9 +220,12 @@ export async function getRemindersPageData(
   homeId: string,
 ): Promise<RemindersPageRule[]> {
   const rules = await prisma.reminder_rules.findMany({
-    where: { home_id: homeId },
+    where: { devices: { home_id: homeId } },
     orderBy: [{ severity: "desc" }, { created_at: "desc" }],
-    include: { devices: true },
+    include: {
+      devices: { include: { device_types: true } },
+      device_type_states: true,
+    },
   });
 
   return rules.map((rule) => ({
@@ -215,14 +234,13 @@ export async function getRemindersPageData(
     severity: rule.severity,
     active: rule.active,
     trigger_presence_state: rule.trigger_presence_state,
-    trigger_device_state: rule.trigger_device_state,
-    device_external_key: rule.device_external_key,
-    devices: rule.devices
-      ? {
-          name: rule.devices.name,
-          category: rule.devices.category as string,
-        }
-      : null,
+    trigger_state_key: rule.device_type_states.state_key,
+    external_key: rule.devices.external_key,
+    devices: {
+      name: rule.devices.name,
+      device_type_id: rule.devices.device_type_id,
+      device_type_label: rule.devices.device_types.label,
+    },
     created_at: rule.created_at.toISOString(),
     updated_at: rule.updated_at.toISOString(),
   }));
@@ -263,21 +281,22 @@ export interface DevicesPageDevice {
   id: string;
   external_key: string;
   name: string;
-  category: string;
+  device_type_id: string;
+  device_type_label: string;
   active: boolean;
   reminder_enabled: boolean;
-  expected_safe_state: string;
+  safe_state_key: string | null;
+  is_safe_state: boolean | null;
   metadata: Record<string, unknown> | null;
   room_name: string | null;
   room_code: string | null;
-  state_value: string | null;
+  state_key: string | null;
   last_seen_at: string | null;
 }
 
 /**
- * Returns every device in a home joined with its room and its latest reported
- * state. Ordered by category, then name.
- * Replaces the `v_device_inventory` view + separate state fetch with Prisma joins.
+ * Returns every device in a home joined with its type, room, safe state and
+ * its latest reported state. Ordered by device type, then name.
  */
 export async function getDevicesPageData(
   homeId: string,
@@ -285,29 +304,33 @@ export async function getDevicesPageData(
   const devices = await prisma.devices.findMany({
     where: { home_id: homeId },
     include: {
+      device_types: true,
+      device_type_states: true, // safe_device_type_state_id → safe state
       rooms: true,
-      device_latest_states: true,
+      device_latest_states: { include: { device_type_states: true } },
     },
-    orderBy: [{ category: "asc" }, { name: "asc" }],
+    orderBy: [{ device_type_id: "asc" }, { name: "asc" }],
   });
 
   if (devices.length === 0) return [];
 
   return devices.map((d) => {
-    const state = d.device_latest_states;
+    const latest = d.device_latest_states;
     return {
       id: d.id,
       external_key: d.external_key,
       name: d.name,
-      category: d.category as string,
+      device_type_id: d.device_type_id,
+      device_type_label: d.device_types.label,
       active: d.active,
       reminder_enabled: d.reminder_enabled,
-      expected_safe_state: d.expected_safe_state as string,
+      safe_state_key: d.device_type_states?.state_key ?? null,
+      is_safe_state: latest?.device_type_states?.is_safe_state ?? null,
       metadata: d.metadata as Record<string, unknown> | null,
       room_name: d.rooms?.name ?? null,
       room_code: d.rooms?.code ?? null,
-      state_value: state?.state_value ?? null,
-      last_seen_at: state?.last_seen_at?.toISOString() ?? null,
+      state_key: latest?.device_type_states?.state_key ?? null,
+      last_seen_at: latest?.last_seen_at?.toISOString() ?? null,
     };
   });
 }
@@ -318,40 +341,43 @@ export async function getDevicesPageData(
 
 export interface EventsPageEvent {
   id: number;
-  device_external_key: string;
-  state_value: string;
+  external_key: string;
+  state_key: string | null;
   observed_at: string;
   device_name: string;
-  device_category: string;
+  device_type_id: string;
+  device_type_label: string;
   room_name: string | null;
   room_code: string | null;
 }
 
 /**
  * Returns the most recent device state events for a home (newest first),
- * joined with the device's name, category and room.
+ * joined with the device's name, type and room.
  */
 export async function getEventsPageData(
   homeId: string,
   limit = 200,
 ): Promise<EventsPageEvent[]> {
   const events = await prisma.device_state_events.findMany({
-    where: { home_id: homeId },
+    where: { devices: { home_id: homeId } },
     orderBy: { observed_at: "desc" },
     take: limit,
     include: {
-      devices: { include: { rooms: true } },
+      devices: { include: { rooms: true, device_types: true } },
+      device_type_states: true,
     },
   });
 
   return events.map((row) => ({
     id: Number(row.id),
-    device_external_key: row.device_external_key,
-    state_value: row.state_value,
+    external_key: row.devices.external_key,
+    state_key: row.device_type_states?.state_key ?? null,
     observed_at: row.observed_at.toISOString(),
-    device_name: row.devices?.name ?? "Unknown device",
-    device_category: (row.devices?.category as string) ?? "utility",
-    room_name: row.devices?.rooms?.name ?? null,
-    room_code: row.devices?.rooms?.code ?? null,
+    device_name: row.devices.name ?? "Unknown device",
+    device_type_id: row.devices.device_type_id,
+    device_type_label: row.devices.device_types.label,
+    room_name: row.devices.rooms?.name ?? null,
+    room_code: row.devices.rooms?.code ?? null,
   }));
 }
