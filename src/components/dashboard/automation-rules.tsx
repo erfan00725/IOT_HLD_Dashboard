@@ -13,6 +13,7 @@ import { CardPanel, PanelHeader, IconBubble, Toggle } from "@/components/ui";
 import { ICON_BUBBLE_STYLES } from "@/lib/utils/tone-styles";
 import { toggleReminderRuleAction } from "@/lib/supabase/actions/reminder-rules";
 import type { AutomationRule } from "@/lib/types/automation-rule";
+import { ROUT_PATHS } from "@/lib/constants/routPaths";
 
 const ICON_MAP: Record<AutomationRule["icon"], LucideIcon> = {
   home: Home,
@@ -60,16 +61,6 @@ function RuleRow({
             disabled={pending}
             onChange={(v) => onToggle(rule.id, v)}
           />
-          <button
-            aria-label={`More options for ${rule.name}`}
-            className="rounded-lg p-1 text-slate-400 dark:text-slate-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 focus-visible:opacity-100"
-          >
-            <MoreVertical
-              className="size-4"
-              strokeWidth={1.8}
-              aria-hidden="true"
-            />
-          </button>
         </div>
       </td>
     </tr>
@@ -108,7 +99,7 @@ export function AutomationRules({
           icon={Settings2}
           title="Automation Rules"
           headingId="automation-rules-heading"
-          viewAllHref="#automations"
+          viewAllHref={ROUT_PATHS.REMINDERS}
         />
       </div>
       <div className="overflow-x-auto">

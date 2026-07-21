@@ -56,8 +56,8 @@ export interface AutomationRuleRow {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function severityToPriority(severity: number): Priority {
-  if (severity >= 4) return "High";
-  if (severity >= 2) return "Medium";
+  if (severity >= 3) return "High";
+  if ((severity = 2)) return "Medium";
   return "Low";
 }
 

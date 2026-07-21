@@ -52,6 +52,7 @@ export async function createReminderRule(payload: {
 export async function updateReminderRule(
   id: string,
   payload: {
+    device_id?: string;
     trigger_presence_state?: string;
     trigger_device_type_state_id?: number;
     reminder_text?: string;

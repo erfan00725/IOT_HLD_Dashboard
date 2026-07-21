@@ -1,11 +1,11 @@
 export const sidebarItems = [
   { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
   { label: "Devices", href: "/devices", icon: "Cpu" },
-  { label: "Automations", href: "#automations", icon: "Zap" },
+  // { label: "Automations", href: "#automations", icon: "Zap" },
   { label: "Events", href: "/events", icon: "CalendarClock" },
   { label: "Reminders", href: "/reminders", icon: "Bell" },
-  { label: "Analytics", href: "#analytics", icon: "BarChart2" },
-  { label: "Settings", href: "#settings", icon: "Settings" },
+  // { label: "Analytics", href: "#analytics", icon: "BarChart2" },
+  // { label: "Settings", href: "#settings", icon: "Settings" },
 ];
 
 export const statusCards: {

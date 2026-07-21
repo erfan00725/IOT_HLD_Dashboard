@@ -137,9 +137,9 @@ function Sidebar({
       {/* Bottom section */}
       <div className="border-t border-slate-100 dark:border-slate-700/60 px-3 pb-6 pt-4">
         <SystemStatus summary={summary} />
-        <div className="mt-1">
+        {/* <div className="mt-1">
           <HelpLink />
-        </div>
+        </div> */}
       </div>
     </aside>
   );
@@ -154,7 +154,7 @@ function UserMenu({ profile }: { profile: Profile | null }) {
   return (
     <button
       type="button"
-      className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+      className="flex items-center cursor-default gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
       aria-label="User menu"
     >
       {/* Avatar */}
@@ -164,11 +164,11 @@ function UserMenu({ profile }: { profile: Profile | null }) {
       <span className="hidden text-sm font-medium text-slate-800 dark:text-slate-200 sm:inline">
         {displayName}
       </span>
-      <ChevronDown
+      {/* <ChevronDown
         className="size-4 text-slate-400 dark:text-slate-500"
         strokeWidth={2}
         aria-hidden="true"
-      />
+      /> */}
     </button>
   );
 }

@@ -1,9 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import {
-  Settings2,
-} from "lucide-react";
+import { Settings2 } from "lucide-react";
 import {
   CardPanel,
   PanelHeader,
@@ -12,16 +10,23 @@ import {
   type FilterTabOption,
 } from "@/components/ui";
 import { severityToPriority } from "@/lib/utils/dashboard-mappers";
-import { toggleReminderRuleAction } from "@/lib/supabase/actions/reminder-rules";
 import {
-  ReminderRuleRow,
-  type ReminderRuleRowData,
-} from "./reminder-rule-row";
+  saveReminderRuleAction,
+  toggleReminderRuleAction,
+} from "@/lib/supabase/actions/reminder-rules";
+import { ReminderRuleRow, type ReminderRuleRowData } from "./reminder-rule-row";
+import type {
+  ReminderDeviceOption,
+  ReminderStateOption,
+} from "./edit-reminder-modal";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface RemindersTableProps {
   rules: ReminderRuleRowData[];
+  devices: ReminderDeviceOption[];
+  stateOptions: ReminderStateOption[];
+  canEdit?: boolean;
 }
 
 // ─── Static filter options ───────────────────────────────────────────────────
@@ -59,10 +64,16 @@ function EmptyReminders({ hasRules }: { hasRules: boolean }) {
  * rules table. All filter state is local; the initial data is passed in
  * from the server page.
  */
-export function RemindersTable({ rules: initialRules }: RemindersTableProps) {
+export function RemindersTable({
+  rules: initialRules,
+  devices,
+  stateOptions,
+  canEdit = false,
+}: RemindersTableProps) {
   const [rules, setRules] = useState(initialRules);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [savingRuleId, setSavingRuleId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   // ── Filter logic ──────────────────────────────────────────────────────────
@@ -111,6 +122,55 @@ export function RemindersTable({ rules: initialRules }: RemindersTableProps) {
         setRules(previous);
       }
     });
+  }
+
+  async function handleSave(payload: {
+    id?: string;
+    device_id: string;
+    trigger_device_type_state_id: number;
+    trigger_presence_state?: string | null;
+    reminder_text: string;
+    severity: number;
+    active: boolean;
+  }) {
+    if (!payload.id) {
+      throw new Error("Reminder rule id is required for saves.");
+    }
+
+    const previous = rules;
+    const device = devices.find((item) => item.id === payload.device_id);
+
+    setSavingRuleId(payload.id);
+    setRules((prev) =>
+      prev.map((rule) =>
+        rule.id === payload.id
+          ? {
+              ...rule,
+              device_id: payload.device_id,
+              device_name: device?.name ?? rule.device_name,
+              device_type_id: device?.typeLabel ?? rule.device_type_id,
+              trigger_device_type_state_id:
+                payload.trigger_device_type_state_id,
+              trigger_presence_state: payload.trigger_presence_state ?? null,
+              reminder_text: payload.reminder_text,
+              severity: payload.severity,
+              active: payload.active,
+            }
+          : rule,
+      ),
+    );
+
+    try {
+      await saveReminderRuleAction({
+        ...payload,
+        id: payload.id,
+        trigger_presence_state: payload.trigger_presence_state ?? undefined,
+      });
+    } catch {
+      setRules(previous);
+    } finally {
+      setSavingRuleId(null);
+    }
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -178,7 +238,12 @@ export function RemindersTable({ rules: initialRules }: RemindersTableProps) {
                     key={rule.id}
                     rule={rule}
                     onToggle={handleToggle}
+                    onSave={handleSave}
+                    devices={devices}
+                    stateOptions={stateOptions}
                     pending={isPending}
+                    isSaving={savingRuleId === rule.id}
+                    canEdit={canEdit}
                   />
                 ))}
               </tbody>

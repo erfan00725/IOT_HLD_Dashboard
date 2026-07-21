@@ -1,3 +1,4 @@
+import { device_type_states } from "./../../../generated/prisma/browser";
 /**
  * Dashboard-specific query helpers.
  * All functions are server-only — they rely on the Prisma client.
@@ -203,10 +204,19 @@ export interface RemindersPageRule {
   trigger_state_key: string;
   external_key: string;
   devices: {
+    id: string;
     name: string;
     device_type_id: string;
     device_type_label: string;
   } | null;
+  device_type_states: {
+    id: bigint;
+    device_type_id: string;
+    state_key: string;
+    label: string;
+    is_safe_state: boolean | null;
+  }[];
+  trigger_device_type_state_id: number;
   created_at: string;
   updated_at: string;
 }
@@ -223,7 +233,9 @@ export async function getRemindersPageData(
     where: { devices: { home_id: homeId } },
     orderBy: [{ severity: "desc" }, { created_at: "desc" }],
     include: {
-      devices: { include: { device_types: true } },
+      devices: {
+        include: { device_types: { include: { device_type_states: true } } },
+      },
       device_type_states: true,
     },
   });
@@ -237,10 +249,14 @@ export async function getRemindersPageData(
     trigger_state_key: rule.device_type_states.state_key,
     external_key: rule.devices.external_key,
     devices: {
+      id: rule.devices.id,
       name: rule.devices.name,
       device_type_id: rule.devices.device_type_id,
       device_type_label: rule.devices.device_types.label,
+      type_id: rule.devices.device_type_id,
     },
+    device_type_states: rule.devices.device_types.device_type_states,
+    trigger_device_type_state_id: Number(rule.trigger_device_type_state_id),
     created_at: rule.created_at.toISOString(),
     updated_at: rule.updated_at.toISOString(),
   }));

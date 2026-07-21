@@ -45,6 +45,13 @@ export async function getDeviceByExternalKey(externalKey: string) {
   });
 }
 
+/** Fetch all known device type states. */
+export async function getAllDeviceTypeStates() {
+  return prisma.device_type_states.findMany({
+    orderBy: [{ device_type_id: "asc" }, { state_key: "asc" }],
+  });
+}
+
 // ─── Create ─────────────────────────────────────────────────────────────────────────────
 
 /** Insert a new device. */
